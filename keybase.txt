@@ -1,0 +1,83 @@
+==================================================================
+https://keybase.io/ryberg
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://www.jonasryberg.se
+  * I am ryberg (https://keybase.io/ryberg) on keybase.
+  * I have a public key with fingerprint 0081 F4DB 3216 1CE3 F556  AE5B 274F 6794 302D 72ED
+
+To claim this, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "fingerprint": "0081f4db32161ce3f556ae5b274f6794302d72ed",
+            "host": "keybase.io",
+            "key_id": "274f6794302d72ed",
+            "kid": "0101b01b0d8d753efd6d4cbd4f3f744e594d3a8f9ea5d71ff5a72e362b568e59151b0a",
+            "uid": "fcfc352736fba6dbb9e2318da4cf5e00",
+            "username": "ryberg"
+        },
+        "service": {
+            "hostname": "www.jonasryberg.se",
+            "protocol": "http:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1419970243,
+    "expire_in": 157680000,
+    "prev": "78e690954e83ca38becf5969ce2145b7126e71d2586756fad2c9a12bf6432c20",
+    "seqno": 3,
+    "tag": "signature"
+}
+
+with the aforementioned key, yielding the PGP signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1
+
+owFtUndUU1cYDxGwoGxwECyaWqqy8naCVtuKCq3IUtHWEvIWhJGE5IUpy6hFRaqW
+glURxYFUUCsoBTlSLYiMCrIUELAgQxEEGaJY6Ytt/+s995x77vcb3/l95ztkNIvD
+1fnEMzBN4Kgc0ql5inM2n9FvjuXjcjKa7xLLD6HeP7RUFkgpFUqpjOG78AUCIUDD
+JA6BAAoQFEQjCCqhEBzEYBrFRDAkAEkMpEi+Az9IrtIqWBtcoqKcpHK2xn7EUpKt
+/g8/5D0gAAQArr2kkMQQiKJJlIQJnIRpiMZgmEJEMAlJhLSIkiAkBtA0ImH1EAri
+CCpkUQBhtRLWTv3ejiZoAkJADEJpXIKSOC6iQAgQkhKYoBFKINASVZRSJgmjWLYy
+GqeUgfw4Bz5bi5ASlHYA2hz/4pGRkU7BcplE9Q/RSUWxeoVSzsgJeSiLBzGMwkUr
+Z6IV7/kULv7XSYxLZSQ7SlYQQSlVUrmM7wKwTIKRaq0BGBCJMAEIQw58KkohVVJi
+qZaBYKhQwB5tGyqCtcSEFCoSiBCYEkKEBBLiFBtEhIoICgRgBMcAEKUwgAQRIYoh
+KC0hQUIkAUCcRmEIJEBtYBUVLpPzXdhOjCSQtVRJA2USRq2npPhxhvt0bXQ5OlyO
+vh5Xuw4cQwPT/3YkUmw7k9B6YcoohNKjkjafy/61/kTlSI2sP6/u0hbfrSm2sV6N
+bk+GLW8knui51bzhUNz3X56ap/zcqOGZp9UMOJPVohjbbAbP1jxcet/uucePvJO5
+PChrp1iksuF6Fh2ALo3pJrzgfNcmru6u1nHSrK3oN25K2bi4vGVN03jH3LbTcb14
+ifrc6rfNDoHJI2l3Th6rDj+W/+G9b97tdw42Nry7RT/Gd7gsfsKhSjPa2nzJoaJv
+844txsoF5eE6TQYByEFFrHe10cmKsH1RF6Idv8obM7e+Cfinf8V4DbiLP/rWVqxP
+TKysa/A4HkCEVSQ13R+fnANfMOu0Tfosqj7t0oSHwym/4fwTduGZtQG5jrysSnWn
+Zatj2xqOvVlegq17zxu3dTcDCrOnmKGNXjk/rXF/dnggJOsIunyPl0VMj2NdetBx
+1bouk4kyG8+lT2N1g67Obw6NT5+0XGIyd13D/ZnrHaleCwuWvSuxs8aPlgi8tw1z
+vo63OxkwZJoXd6aS9/15i107t45j9otLbUOL117Jmewf4eHILJ8AzQcGZQ86r9ll
+e3Uu+ub2Ig1PwKizkq7mCtSXz+3d8KllhM3rHUfaCwx93yZjjzYaqJ5+4m9795fK
+ppa6vscbFt3OsvJo0tUNkZU+TjcSZNwKiQrm/GBFXv5hRV9xUzw3s9Z3OlAwXQyO
+O1VVe8/3fq6+uKeRWWXdDdh93KLTEdtRZFLF+/DUR8Mb2ie6J/daxa+27NBzczah
+6xNP+UztORTW4jr6MsoU3T05Mire1FxoLreubNzJOwovmTe5mDl+p/dR9umZy08i
+uK6N+l+n+xWM8Kw63M5nenCCSuOufEwts0DfgKGD1xb4777JOUBfPLxvYbKef1jO
+4YxNK8pzXa3VvNL0NtjUdbx1tWfqjYXHYqY9xLs4wp71W5Rlv09m+PzJWz+2d23z
+upxe2WyRXZ2FGXdl5tDdntcl54YqDtT4Qzot/TnxbQ96PXudZMZO5vmvu/sLnW/Z
+HOzmMK/cpqo28cwGl+4ZnLGvO/tFzW9I4dV5y5ytC9z8yh8aY5k765e3Zppzmevm
+e0fTru/X/F40GpHybn1swhdDtX/xn7i7lo9ZZwyEO5cfFcYQv2Ws3XTsbfqgZuvp
+zJdpmj8SBjK2m/dYtg8vHnmxTLw1lBs2tsrv2vicuTWm93qfmFws9stvIpKD6uDH
+UNF0/e03jT+ldirCEt2zf4ZEyea46ZLO0tmfWRTtk6bCDS5QwUvD/EliPnBQYT+9
+MSB1e8tAW9L5LrUmP1jVlzcmA16fWeRknNqenM0rq331xvK6zZFQ/Q9yzwJTfZ97
+1uyvsop++mV6dol4tUNr+zszxuBayjYDpDCxS5xiOOv4HKzvR/2uLk/7vvxEbx/m
+aGT83w==
+=PrL2
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/ryberg
+
+==================================================================
