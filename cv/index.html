@@ -3,6 +3,8 @@ layout: default
 title: Jonas Ryberg | CV
 ---
 	<h2>{{ page.title }}</h2>
-	{{ content }}
 	
-	{% include cv.md %}
+	{% capture content %}{% include include cv.md %}{% endcapture %}
+	{{ content | markdownify }}
+
+	
