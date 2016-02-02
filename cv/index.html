@@ -5,6 +5,6 @@ title: Jonas Ryberg | CV
 	<h2>{{ page.title }}</h2>
 	
 	{% capture content %}{% include include cv.md %}{% endcapture %}
-	{{ content | markdownify }}
+	{{ content | kramdown }}
 
 	
