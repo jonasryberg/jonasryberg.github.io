@@ -1,0 +1,58 @@
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virtuell 3B8-E</title>
+</head>    
+
+<body>
+<H1>Gissa nummer</H1>
+<p id="answer">Gissa ett nummer mellan 1 och 99.</p>
+<p id="guess"><input type="number" value="" id="svar"><button onclick="getGuess()">ok</button></p>
+<!-- <p id="test">svar</p> -->
+
+<script>
+   
+        
+    // Hämta in gissning från användaren
+  var x;  
+  var correctanswer;
+  var numberOfTries = 0;
+  correctanswer = Math.floor(Math.random() * 100);
+  function getGuess() {
+      
+      //document.getElementById("test").innerHTML = correctanswer;
+        x = document.getElementById("svar").value;
+        if (x>0 && x<100){
+            game();
+        } else {
+            document.getElementById("answer").innerHTML = "Talet ska vara mellan 1 och 99, f&ouml;rs&ouml;k igen.";
+        } 
+    }
+        
+    // Funktion för att kontrollera om svaret stämmer med det rätta svaret
+    function checkNumber(x){
+        
+        return correctanswer - x;
+    }
+    
+    // funktion för att presentera om svaret är rätt eller inte
+    function game(){
+        
+        var guess = checkNumber(x);
+        numberOfTries +=1;
+            if (guess == 0){
+                document.getElementById("answer").innerHTML = "R&auml;tt svar p&aring " + numberOfTries + " f&oumlrs&oumlk.";
+            } else if (guess > 0){
+                document.getElementById("answer").innerHTML = "Fel svar gissa p&aring; ett h&ouml;gre nummer";
+            } else {
+                document.getElementById("answer").innerHTML = "Fel svar gissa p&aring; ett l&auml;gre nummer";
+            }
+           
+    }
+
+</script>
+</body>
+</html>
+
