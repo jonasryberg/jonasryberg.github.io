@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Rensa för webben</title>
+    <meta charset="UTF-8"/>
+</head>
+<script>
+    function f1() {
+       
+        let delare = document.getElementById("delare").value;
+        let newtext = document.getElementById("textarea1").value;
+        
+        newtext = newtext.replaceAll(delare, "").replaceAll('. \n', '@@@').replaceAll('.\n', '@@@').replaceAll('\n', "").replaceAll('@@@–', '.\n–').replaceAll('@@@', '.\n\n').replaceAll(' ',' ')
+        document.getElementById("textarea2").value = newtext;
+
+
+    }
+
+</script>
+
+<body>
+    <h1>Textrensare </h1>
+    <p>- rensa för webben</p>
+   
+    <p>
+        <label for="delare">Delare</label>
+        <input type="text" id="delare" name="delare" value="­">
+    </p>
+    <p>
+
+        <textarea id="textarea1" rows="35" cols="100" placeholder="Klistra in texten här "></textarea>
+        <button type="button" onclick="f1()" title="Text till webb">Webbifiera -></button>
+        <textarea id="textarea2" rows="35" cols="100" placeholder="Din rensade text kommer här"></textarea>
+    </p>
+</body>
+
+</html>
