@@ -1,0 +1,39 @@
+<html>
+
+<head>
+    <title>Svarta listan rensare</title>
+</head>
+<script>
+    function f1() {
+        let kategori = document.getElementById("kategori").value;
+        let delare = document.getElementById("delare").value;
+        let newtext = document.getElementById("textarea1").value;
+        let nyrad = "\n" + kategori + "\t";
+        newtext = newtext.replaceAll(/^Utskriftsdatum.*\n?/gm, "").replaceAll(/^Ärendesammanställning.*\n?/gm, "").replaceAll(delare, "@@@").replaceAll("\n", "\t").replaceAll("@@@", nyrad)
+        document.getElementById("textarea2").value = newtext;
+
+
+    }
+
+</script>
+
+<body>
+    <h1>Textrensare </h1>
+    <p>- från pdf-text till tabell</p>å
+    <p>
+        <label for="kategori">Kategori</label>
+        <input type="text" id="kategori" name="kategori" placeholder="Kategori">
+    </p>
+    <p>
+        <label for="delare">Delare</label>
+        <input type="text" id="delare" name="delare" value="Änr">
+    </p>
+    <p>
+
+        <textarea id="textarea1" rows="35" cols="100" placeholder="Klistra in texten här "></textarea>
+        <button type="button" onclick="f1()" title="Text till tabell">Tabell -></button>
+        <textarea id="textarea2" rows="35" cols="100" placeholder="Din tabell kommer här"></textarea>
+    </p>
+</body>
+
+</html>
