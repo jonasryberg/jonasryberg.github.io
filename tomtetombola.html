@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tomtetombolan</title>
+    <!-- Lägg till CSS här om nödvändigt -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            background-color: #d22; /* Mörkröd */
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 2em;
+            border-bottom: 5px solid green;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            overflow: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: green;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: darkgreen;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        #nameList, #pairsList {
+            background-color: #e2f0cb; /* Ljusgrönt */
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tomtetombola</h1>
+    <input type="text" id="nameInput" placeholder="Skriv in ett förnamn">
+    <button onclick="addName()">Lägg till Namn</button>
+    <button onclick="generatePairs()">Generera Par</button>
+    <div id="nameList">Namnlista:</div>
+    <div id="pairsList">Givare:	Mottagare:</div>
+
+
+
+    <!-- JavaScript-kod här eller i en separat fil -->
+<script>
+var names = [];
+
+function addName() {
+    var nameInput = document.getElementById("nameInput").value;
+    if(nameInput) {
+        names.push(nameInput);
+        updateNameList(); // Uppdatera namnlistan
+        document.getElementById("nameInput").value = ''; // Rensa input-fältet
+        document.getElementById("nameInput").focus(); // Fokusera på input-fältet igen
+    }
+}
+
+function updateNameList() {
+    var nameList = document.getElementById("nameList");
+    nameList.innerHTML = 'Namnlista:<br>' + names.join('<br>');
+}
+
+function generatePairs() {
+    var pairsList = document.getElementById("pairsList");
+    pairsList.innerHTML = ''; // Rensa tidigare resultat
+
+    if (names.length < 2) {
+        pairsList.innerHTML = 'För få namn för att skapa par';
+        return;
+    }
+
+    // Funktion för att skapa alla möjliga par (utan självparning)
+    function createAllPairs(names) {
+        let allPairs = [];
+        for (let i = 0; i < names.length; i++) {
+            for (let j = 0; j < names.length; j++) {
+                if (i !== j) {
+                    allPairs.push([names[i], names[j]]);
+                }
+            }
+        }
+        return allPairs;
+    }
+
+    // Funktion för att försöka skapa en balanserad och slumpmässig uppsättning av par
+    function tryGeneratePairs() {
+        var allPairs = createAllPairs(names);
+        allPairs.sort(() => Math.random() - 0.5);
+
+        var firstInPair = new Set();
+        var secondInPair = new Set();
+        var chosenPairs = [];
+
+        for (let pair of allPairs) {
+            if (!firstInPair.has(pair[0]) && !secondInPair.has(pair[1])) {
+                chosenPairs.push(pair);
+                firstInPair.add(pair[0]);
+                secondInPair.add(pair[1]);
+
+                // Kontrollera om alla krav är uppfyllda
+                if (firstInPair.size === names.length && secondInPair.size === names.length) {
+                    return chosenPairs;
+                }
+            }
+        }
+
+        // Returnera null om en komplett uppsättning inte kunde skapas
+        return null;
+    }
+
+    // Försök tills en fungerande uppsättning av par har skapats
+    let result;
+    do {
+        result = tryGeneratePairs();
+    } while (!result);
+
+    // Visa paren
+    result.forEach(pair => {
+        let div = document.createElement("div");
+        div.textContent = pair.join(" --> ");
+        pairsList.appendChild(div);
+    });
+}
+
+</script>
+</body>
+</html>
