@@ -1,1 +1,275 @@
+<!doctype html>
+<html lang="sv" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Org-mode Todo — No‑build (v10)</title>
+  <script>window.tailwindConfig = { darkMode: 'class' };</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .guide { border-left: 1px solid rgb(148 163 184 / 0.35); }
+    .menu { position: absolute; right: 0; top: 100%; min-width: 10rem; background: white; border: 1px solid rgba(100,116,139,.35); border-radius: .5rem; padding: .25rem; box-shadow: 0 10px 20px rgba(0,0,0,.08); z-index: 30; }
+    .menu.dark { background: rgb(15 23 42); border-color: rgb(51 65 85); }
+    .menu-item { font-size: .875rem; padding: .375rem .5rem; border-radius: .375rem; }
+    .menu-item:hover { background: rgb(241 245 249); }
+    .dark .menu-item:hover { background: rgb(30 41 59); }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900">
+  <div class="max-w-5xl mx-auto p-4 md:p-8">
+    <header class="flex items-center gap-2 mb-4">
+      <h1 class="text-xl font-semibold tracking-tight">todo</h1>
+      <div class="ml-auto flex items-center gap-2">
+        <button id="openLocal" class="px-2.5 py-1.5 text-sm rounded border">Öppna</button>
+        <button id="importBtn" class="px-2.5 py-1.5 text-sm rounded border">Importera</button>
+        <button id="newFileBtn" class="px-2.5 py-1.5 text-sm rounded border" title="Skapa ny fil (Ctrl/Cmd+N)">Ny fil</button>
+        <button id="saveBtn" class="px-2.5 py-1.5 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700" disabled>Spara</button>
+        <button id="saveAsBtn" class="px-2.5 py-1.5 text-sm rounded border" title="Spara som… (Ctrl/Cmd+Shift+S)">Spara som…</button>
+        <span id="savedBadge" class="text-xs px-2 py-1 rounded border" title="Filens sparstatus">—</span>
+      </div>
+    </header>
+
+    <section class="mb-4 p-3 border rounded bg-white">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" class="flex-1 px-3 py-2 border rounded" placeholder="Sök i rubriker och text…" />
+        <div class="flex gap-2">
+          <button id="expandAll" class="px-2 py-1 text-sm rounded border">Visa alla</button>
+          <button id="collapseAll" class="px-2 py-1 text-sm rounded border">Fäll alla</button>
+        </div>
+        <span id="modeBadge" class="text-xs px-2 py-1 rounded border">Tomt</span>
+        <span id="fileBadge" class="text-xs px-2 py-1 rounded border" title="Aktiv fil">—</span>
+      </div>
+    </section>
+
+    <main id="tree" class="space-y-1"></main>
+
+    <section class="mt-6 p-3 border rounded bg-white">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-semibold">Org‑källtext (förhandsvisning)</div>
+        <div class="flex items-center gap-2">
+          <button id="downloadBtn" class="px-2 py-1 text-sm rounded border">Ladda ner som .org</button>
+        </div>
+      </div>
+      <pre id="preview" class="bg-slate-100 rounded p-3 overflow-auto text-sm max-h-80 whitespace-pre-wrap"></pre>
+    </section>
+  </div>
+
+  <input id="hiddenFile" type="file" accept=".org,.txt,.md" class="hidden" />
+
+  <script>
+    // ------------------------
+    // Minimal Org parser
+    // ------------------------
+    const CHECKBOX_RE = /^\s*-\s*\[( |x|-)\]\s+(.*)$/i;
+    const DEADLINE_RE = /(^|\s)DEADLINE:\s*<([^>]+)>/i; // accept full Org timestamp
+    const SCHEDULED_RE = /(^|\s)SCHEDULED:\s*<([^>]+)>/i; // accept full Org timestamp
+
+    const newId = () => Math.random().toString(36).slice(2);
+
+    function parseOrg(text){
+      const lines = text.replace(/\r\n?/g, "\n").split("\n");
+      const root = { id:newId(), level:0, title:"ROOT", todo:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, deadline:null };
+      const stack = [root];
+      const headingRe = /^(\*+)\s+(?:(TODO|DONE)\s+)?(.*)$/;
+      let current = root;
+      for(const line of lines){
+        const m = line.match(headingRe);
+        if(m){
+          const level = m[1].length; const todo = m[2] || null; const title = (m[3]||"").trim();
+          const node = { id:newId(), level, title, todo, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, deadline:null };
+          while(stack.length && stack[stack.length-1].level >= level) stack.pop();
+          stack[stack.length-1].children.push(node); stack.push(node); current = node;
+        } else {
+          // dates first (do not keep in body)
+          const d = line.match(DEADLINE_RE); if(d){ current.deadline = d[2]; continue; }
+          const s = line.match(SCHEDULED_RE); if(s){ current.scheduled = s[2]; continue; }
+          const c = line.match(CHECKBOX_RE); if(c){ const st=c[1]; const txt=c[2]; const checked = st==='x'?true: st==='-'? null:false; current.checkboxes.push({id:newId(), text:txt, checked, raw:line}); current.body.push(line); }
+          else { current.body.push(line); }
+        }
+      }
+      return root.children;
+    }
+
+    function serializeOrg(nodes){
+      const checkboxLine = (cb) => `- [${cb.checked===true? 'x' : cb.checked===null? '-' : ' '}] ${cb.text}`;
+      const lines = [];
+      const walk = (n)=>{
+        if(n.level>0){ const stars='*'.repeat(n.level); const todo = n.todo? n.todo+" " : ""; lines.push(`${stars} ${todo}${n.title}`.trimEnd()); }
+        let cbIdx=0;
+        for(const line of n.body){
+          if(CHECKBOX_RE.test(line)){
+            const cb=n.checkboxes[cbIdx++]; lines.push(cb? checkboxLine(cb): line);
+          } else if(/\b(DEADLINE:|SCHEDULED:)\b/i.test(line)) {
+            // drop leftovers
+          } else { lines.push(line); }
+        }
+        if(n.scheduled) lines.push(`SCHEDULED: <${n.scheduled}>`);
+        if(n.deadline) lines.push(`DEADLINE: <${n.deadline}>`);
+        n.children.forEach(walk);
+      };
+      nodes.forEach(walk);
+      return lines.join('\n').replace(/\n+$/g,'');
+    }
+
+    // ------------------------
+    // State & helpers
+    // ------------------------
+    let fileHandle = null;
+    let nodes = null; // tree
+    let raw = '';
+    let query = '';
+    let lastSavedText = '';
+    let currentFileName = '';
+
+    const treeEl = document.getElementById('tree');
+    const previewEl = document.getElementById('preview');
+    const modeBadge = document.getElementById('modeBadge');
+
+    const setNodes = (next)=>{ nodes = next; document.getElementById('saveBtn').disabled = !nodes; render(); };
+    function updateTree(mut){ if(!nodes) return; const copy = structuredClone(nodes); mut(copy); setNodes(copy); }
+    function findAndDo(arr, id, fn){ for(let i=0;i<arr.length;i++){ const n = arr[i]; if(n.id===id) return fn(n, arr, i); if(findAndDo(n.children, id, fn)) return true; } return false; }
+    function isOverdue(date){ if(!date) return false; const today = new Date().toISOString().slice(0,10); return date < today; }
+    function hasNote(n){ return n.body.some(l=>!CHECKBOX_RE.test(l) && !/\b(DEADLINE:|SCHEDULED:)\b/i.test(l) && l.trim().length>0); }
+
+    // ------------------------
+    // Simple dropdown menu helper
+    // ------------------------
+    function makeKebab(actions){
+      const wrap = document.createElement('div');
+      wrap.className = 'relative';
+      const btn = document.createElement('button');
+      btn.className = 'h-7 w-7 grid place-items-center rounded hover:bg-slate-200';
+      btn.setAttribute('aria-label','Meny');
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+      const menu = document.createElement('div');
+      menu.className = 'menu hidden';
+      actions.forEach(a=>{
+        if(a==='sep'){ const hr=document.createElement('div'); hr.className='my-1 border-t border-slate-200'; menu.appendChild(hr); return; }
+        const item=document.createElement('button'); item.type='button'; item.className='menu-item w-full text-left'; item.textContent=a.label; item.onclick = ()=>{ hide(); a.onClick(); };
+        if(a.danger) item.style.color = '#dc2626';
+        menu.appendChild(item);
+      });
+      function show(){ menu.classList.remove('hidden'); document.addEventListener('click', onDoc, { once:true }); }
+      function hide(){ menu.classList.add('hidden'); }
+      function onDoc(ev){ if(!wrap.contains(ev.target)) hide(); }
+      btn.onclick = (e)=>{ e.stopPropagation(); menu.classList.contains('hidden')? show(): hide(); };
+      wrap.append(btn, menu);
+      return wrap;
+    }
+
+    // ------------------------
+    // Rendering
+    // ------------------------
+    function render(){
+      modeBadge.textContent = nodes? 'Redigerar' : 'Tomt';
+      const fileBadge = document.getElementById('fileBadge');
+      if(fileBadge){ fileBadge.textContent = nodes ? (currentFileName || '(ej sparad)') : '—'; }
+      const content = nodes? serializeOrg(nodes) : raw;
+      previewEl.textContent = content;
+      const badge = document.getElementById('savedBadge');
+      if(badge){ if(!nodes){ badge.textContent='—'; badge.className='text-xs px-2 py-1 rounded border'; } else { const same = content === lastSavedText; badge.textContent = same ? 'Sparad' : 'Osparad'; badge.className = 'text-xs px-2 py-1 rounded ' + (same ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'); } }
+      treeEl.innerHTML = '';
+      if(!nodes){ treeEl.innerHTML = `<div class="text-slate-500">Öppna/importera en .org‑fil för att börja, eller klicka <b>Ny fil</b>.</div>`; return; }
+      nodes.forEach(n=> treeEl.appendChild(renderNode(n)));
+    }
+
+    function guides(level){ const wrap = document.createElement('div'); wrap.className = 'flex items-stretch select-none'; for(let i=0;i<Math.max(0, level); i++){ const g = document.createElement('div'); g.className = 'w-4 md:w-6 -ml-px guide'; wrap.appendChild(g); } return wrap; }
+
+    function renderNode(node){
+      const wrapper = document.createElement('div'); wrapper.className = 'rounded-2xl p-2 hover:bg-slate-100 transition';
+      const row = document.createElement('div'); row.className = 'flex items-center gap-2 py-1';
+      const match = !query || node.title.toLowerCase().includes(query) || node.body.some(l=>l.toLowerCase().includes(query)); if(!match) row.classList.add('opacity-50');
+      const chevron = document.createElement('button'); chevron.className = 'h-7 w-7 grid place-items-center rounded hover:bg-slate-200'; chevron.innerHTML = node.collapsed ? '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'; chevron.onclick = ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.collapsed = !n.collapsed; return true; }); });
+      const pill = document.createElement('button'); pill.className = (node.todo==='TODO' ? 'bg-amber-500 text-white' : node.todo==='DONE' ? 'bg-emerald-600 text-white' : 'border') + ' text-xs px-2 py-1 rounded'; pill.textContent = node.todo || 'NONE'; pill.title = 'Klicka för att växla TODO/DONE'; pill.onclick = ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.todo = n.todo==='TODO'? 'DONE' : n.todo==='DONE'? null : 'TODO'; return true; }); });
+      const titleBtn = document.createElement('button'); titleBtn.className = 'text-left font-medium truncate flex-1'; titleBtn.title = 'Klicka för att redigera titel'; titleBtn.textContent = node.title; titleBtn.onclick = ()=> startInlineTitleEdit(node);
+      const right = document.createElement('div'); right.className = 'ml-auto flex items-center gap-2 relative';
+      if(node.scheduled){ const b=document.createElement('span'); b.className='text-xs px-2 py-1 rounded border'; b.textContent = `SCHEDULED ${node.scheduled}`; right.appendChild(b); }
+      if(node.deadline){ const b=document.createElement('span'); b.className='text-xs px-2 py-1 rounded bg-amber-600 text-white'; if(isOverdue(node.deadline)) { b.className='text-xs px-2 py-1 rounded bg-red-600 text-white'; } b.textContent = `DEADLINE ${node.deadline}`; right.appendChild(b); }
+
+      // kebab menu
+      const kebab = makeKebab([
+        { label: 'Växla TODO/DONE', onClick: ()=> pill.click() },
+        { label: 'Lägg till barn', onClick: ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.children.push({ id:newId(), level:n.level+1, title:'Ny uppgift', todo:'TODO', children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, deadline:null }); n.collapsed=false; return true; }); }) },
+        { label: 'Lägg till syskon', onClick: ()=> updateTree(next=>{ findAndDo(next, node.id, (n,parent,idx)=>{ if(!parent) return false; const sibling={ id:newId(), level:n.level, title:'Ny uppgift', todo:'TODO', children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, deadline:null }; parent.splice(idx+1,0,sibling); return true; }); }) },
+        { label: 'Notering', onClick: ()=> toggleNoteEditor(node.id) },
+        { label: 'Datum', onClick: ()=> toggleDateEditor(node.id) },
+        'sep',
+        { label: 'Ta bort', danger:true, onClick: ()=> updateTree(next=>{ const remove=(arr)=>{ const i=arr.findIndex(x=>x.id===node.id); if(i>=0){ arr.splice(i,1); return true;} for(const c of arr) if(remove(c.children)) return true; return false; }; remove(next); }) }
+      ]);
+
+      row.appendChild(guides(node.level-1)); row.appendChild(chevron); row.appendChild(pill); row.appendChild(titleBtn); row.appendChild(right); right.appendChild(kebab);
+
+      const body = document.createElement('div'); body.className='ml-10 pl-3 guide space-y-3';
+      const noteWrap = document.createElement('div'); noteWrap.id = `note-${node.id}`; const noteText = node.body.filter(l=>!CHECKBOX_RE.test(l) && !/\b(DEADLINE:|SCHEDULED:)\b/i.test(l)).join('\n').trim(); if(noteText){ const pre=document.createElement('pre'); pre.className='whitespace-pre-wrap text-sm text-slate-600'; pre.textContent=noteText; noteWrap.appendChild(pre); } body.appendChild(noteWrap);
+      const dateWrap = document.createElement('div'); dateWrap.id = `date-${node.id}`; body.appendChild(dateWrap);
+
+      node.checkboxes.forEach((cb, idx)=>{ const line = document.createElement('div'); line.className='flex items-center gap-2 -mt-1'; const box = document.createElement('button'); box.className='inline-flex h-5 w-5 items-center justify-center rounded-sm border'; const setBox = ()=>{ box.innerHTML = cb.checked? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : cb.checked===null? '-' : ''; if(cb.checked){ box.classList.add('bg-emerald-500','border-emerald-500','text-white'); } else { box.classList.remove('bg-emerald-500','border-emerald-500','text-white'); } }; setBox(); box.onclick = ()=>{ updateTree(next=>{ findAndDo(next, node.id, n=>{ const item = n.checkboxes[idx]; if(!item) return true; item.checked = item.checked===true? false : item.checked===false? null : true; return true; }); }); }; const txt = document.createElement('span'); txt.className='text-sm'; txt.textContent = cb.text; line.append(box, txt); body.appendChild(line); });
+
+      const nodeBlock = document.createElement('div'); nodeBlock.appendChild(row); if(!node.collapsed) nodeBlock.appendChild(body); wrapper.appendChild(nodeBlock);
+      if(!node.collapsed && node.children && node.children.length){ const kids = document.createElement('div'); kids.className = 'space-y-1'; node.children.forEach(ch => kids.appendChild(renderNode(ch))); wrapper.appendChild(kids); }
+      return wrapper;
+    }
+
+    function startInlineTitleEdit(node){ render(); requestAnimationFrame(()=>{ const titleBtns = Array.from(document.querySelectorAll('button.text-left.font-medium')); for(const el of titleBtns){ if(el.textContent===node.title){ const input=document.createElement('input'); input.value=node.title; input.className='bg-transparent outline-none border-b border-blue-500 px-1 text-sm flex-1'; input.onkeydown=(e)=>{ if(e.key==='Enter') input.blur(); if(e.key==='Escape'){ input.value=node.title; input.blur(); } }; input.onblur=()=>{ const val=input.value; updateTree(next=>{ findAndDo(next, node.id, n=>{ n.title=val; return true; }); }); }; el.replaceWith(input); input.focus(); break; } } }); }
+
+    function toggleNoteEditor(id){ const wrap = document.getElementById(`note-${id}`); if(!wrap) return; if(wrap.dataset.open==='1'){ wrap.dataset.open='0'; render(); return; } wrap.dataset.open='1'; const currentText = Array.from(wrap.childNodes).map(n=> n.textContent||'').join('\n').trim(); wrap.innerHTML = ''; const label = document.createElement('div'); label.className='text-xs text-slate-500'; label.textContent='Notering'; const ta = document.createElement('textarea'); ta.className='w-full mt-1 text-sm bg-white border rounded p-2'; ta.rows=4; ta.value=currentText; const status = document.createElement('span'); status.className='text-xs ml-2'; const bar = document.createElement('div'); bar.className='flex items-center gap-2 mt-2'; const save = document.createElement('button'); save.className='px-2 py-1 rounded border text-sm'; save.textContent='Spara notering'; save.onclick = ()=>{ updateTree(next=>{ findAndDo(next, id, n=>{ const onlyCbs = n.body.filter(l=>CHECKBOX_RE.test(l)); n.body = [...ta.value.split('\n'), ...onlyCbs]; return true; }); }); status.textContent='Sparad'; setTimeout(()=>status.textContent='', 1500); }; const close = document.createElement('button'); close.className='px-2 py-1 rounded border text-sm'; close.textContent='Stäng'; close.onclick = ()=>{ wrap.dataset.open='0'; render(); }; ta.addEventListener('input', ()=>{ status.textContent='Osparad'; }); bar.append(save, close, status); wrap.append(label, ta, bar); }
+
+    function toggleDateEditor(id){ const wrap = document.getElementById(`date-${id}`); if(!wrap) return; if(wrap.dataset.open==='1'){ wrap.dataset.open='0'; render(); return; } wrap.dataset.open='1'; let sched=''; let dead=''; findAndDo(nodes, id, n=>{ sched=n.scheduled||''; dead=n.deadline||''; return true; }); wrap.innerHTML = ''; const label = document.createElement('div'); label.className='text-xs text-slate-500'; label.textContent='Datum'; const grid = document.createElement('div'); grid.className='grid grid-cols-2 gap-2 mt-1 max-w-md'; const sBox = document.createElement('div'); sBox.innerHTML = '<div class="text-xs mb-1">SCHEDULED</div>'; const sIn = document.createElement('input'); sIn.type='date'; sIn.className='border rounded px-2 py-1 w-full'; sIn.value=sched; sBox.appendChild(sIn); const dBox = document.createElement('div'); dBox.innerHTML = '<div class="text-xs mb-1">DEADLINE</div>'; const dIn = document.createElement('input'); dIn.type='date'; dIn.className='border rounded px-2 py-1 w-full'; dIn.value=dead; dBox.appendChild(dIn); const bar = document.createElement('div'); bar.className='flex items-center gap-2 mt-2'; const save = document.createElement('button'); save.className='px-2 py-1 rounded border text-sm'; save.textContent='Spara datum'; save.onclick = ()=>{ updateTree(next=>{ findAndDo(next, id, n=>{ n.scheduled = sIn.value || null; n.deadline = dIn.value || null; n.body = n.body.filter(l=>!/\b(DEADLINE:|SCHEDULED:)\b/i.test(l)); return true; }); }); }; const clear = document.createElement('button'); clear.className='px-2 py-1 rounded border text-sm'; clear.textContent='Rensa'; clear.onclick = ()=>{ sIn.value=''; dIn.value=''; updateTree(next=>{ findAndDo(next, id, n=>{ n.scheduled=null; n.deadline=null; n.body = n.body.filter(l=>!/\b(DEADLINE:|SCHEDULED:)\b/i.test(l)); return true; }); }); }; const close = document.createElement('button'); close.className='px-2 py-1 rounded border text-sm'; close.textContent='Stäng'; close.onclick = ()=>{ wrap.dataset.open='0'; render(); }; grid.append(sBox, dBox); wrap.append(label, grid, bar); bar.append(save, clear, close); }
+
+    // ------------------------
+    // File + persistence (IndexedDB for last handle)
+    // ------------------------
+    async function openLocal(){ if(!window.showOpenFilePicker){ alert('Din webbläsare saknar stöd för File System Access API. Använd Chrome/Edge eller importera fil.'); return; } try{ const [handle] = await window.showOpenFilePicker({ types:[{ description:'Org-mode', accept:{ 'text/plain': ['.org','.txt','.md'] } }] }); fileHandle = handle; const file = await handle.getFile(); const text = await file.text(); raw = text; lastSavedText = text; currentFileName = handle.name || ''; setNodes(parseOrg(text)); await idbSet('lastHandle', handle); }catch(e){ /* canceled */ } }
+
+    async function save(){ if(!nodes) return; const text = serializeOrg(nodes); if(fileHandle){ const w = await fileHandle.createWritable(); await w.write(text); await w.close(); await idbSet('lastHandle', fileHandle); } else { download('export.org', text); } lastSavedText = text; render(); }
+
+    async function saveAs(){ try{ const text = nodes? serializeOrg(nodes) : (raw || ''); if(window.showSaveFilePicker){ const handle = await window.showSaveFilePicker({ suggestedName: 'todo.org', types:[{ description:'Org-mode', accept:{ 'text/plain':['.org'] } }] }); fileHandle = handle; currentFileName = handle.name || ''; const w = await handle.createWritable(); await w.write(text); await w.close(); await idbSet('lastHandle', fileHandle); lastSavedText = text; render(); } else { download('export.org', text); lastSavedText = text; render(); } } catch(e){ /* canceled */ } }
+
+    function newFile(){ fileHandle = null; raw=''; const initial=[{ id:newId(), level:1, title:'Ny uppgift', todo:'TODO', children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, deadline:null }]; lastSavedText=''; currentFileName='Ny fil'; setNodes(initial); }
+
+    function download(name, text){ const blob = new Blob([text], {type:'text/plain;charset=utf-8'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+    function idbOpen(){ return new Promise((resolve, reject)=>{ const req=indexedDB.open('org-webapp',1); req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv'); }; req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error); }); }
+    async function idbSet(key, value){ const db=await idbOpen(); await new Promise((res, rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(value, key); tx.oncomplete=()=>{ db.close(); res(); }; tx.onerror=()=>{ const err=tx.error; db.close(); rej(err); }; }); }
+    async function idbGet(key){ const db=await idbOpen(); return await new Promise((res, rej)=>{ const tx=db.transaction('kv','readonly'); const req=tx.objectStore('kv').get(key); req.onsuccess=()=>{ const v=req.result; db.close(); res(v); }; req.onerror=()=>{ const err=req.error; db.close(); rej(err); }; }); }
+    async function idbDel(key){ const db=await idbOpen(); await new Promise((res, rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').delete(key); tx.oncomplete=()=>{ db.close(); res(); }; tx.onerror=()=>{ const err=tx.error; db.close(); rej(err); }; }); }
+
+    async function tryAutoLoadLast(){ try{ const last = await idbGet('lastHandle'); if(!last) return false; const q = await last.queryPermission?.({mode:'read'}); if(q==='granted' || (await last.requestPermission?.({mode:'read'}))==='granted'){ fileHandle = last; const text = await (await last.getFile()).text(); raw = text; lastSavedText = text; currentFileName = last.name || ''; setNodes(parseOrg(text)); return true; } }catch{} return false; }
+
+    // ------------------------
+    // Wire up UI
+    // ------------------------
+    const openBtn = document.getElementById('openLocal');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveAsBtn = document.getElementById('saveAsBtn');
+    const newFileBtn = document.getElementById('newFileBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const importBtn = document.getElementById('importBtn');
+    const hiddenFile = document.getElementById('hiddenFile');
+
+    openBtn.onclick = openLocal;
+    saveBtn.onclick = save;
+    saveAsBtn.onclick = saveAs;
+    newFileBtn.onclick = newFile;
+    downloadBtn.onclick = ()=>{ const text = nodes? serializeOrg(nodes) : raw; download('export.org', text); };
+    importBtn.onclick = ()=> hiddenFile.click();
+    hiddenFile.onchange = async (e)=>{ const f = e.target.files && e.target.files[0]; if(!f) return; const text = await f.text(); fileHandle=null; raw=text; lastSavedText=text; currentFileName = f.name || ''; setNodes(parseOrg(text)); e.target.value=''; await idbDel('lastHandle'); };
+
+    document.getElementById('search').oninput = (e)=>{ query = (e.target.value||'').toLowerCase(); render(); };
+    document.getElementById('expandAll').onclick = ()=> updateTree(next=>{ const mark=n=>{ n.collapsed=false; n.children.forEach(mark); }; next.forEach(mark); });
+    document.getElementById('collapseAll').onclick = ()=> updateTree(next=>{ const mark=n=>{ n.collapsed=true; n.children.forEach(mark); }; next.forEach(mark); });
+
+    window.addEventListener('keydown', (e)=>{ 
+      if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='s'){ e.preventDefault(); save(); }
+      if((e.ctrlKey||e.metaKey) && e.shiftKey && e.key.toLowerCase()==='s'){ e.preventDefault(); saveAs(); }
+      if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='n'){ e.preventDefault(); newFile(); }
+    });
+
+    render();
+    // Auto-load last if browser granted permission previously
+    tryAutoLoadLast();
+  </script>
+</body>
+</html>
 
