@@ -69,6 +69,7 @@ const recentFileStore = 'settings';
 const recentFileKey = 'last-file-handle';
 const recentFilesKey = 'recent-file-handles';
 const recentFilesLimit = 5;
+const fallbackLastFileKey = 'last-file-content';
 const backupDirectoryKey = 'backup-directory-handle';
 let backupDirectoryHandle = null;
 const autosaveSettingKey = 'org-mode-local-autosave';
@@ -225,16 +226,39 @@ async function createNewFile() {
 }
 
 async function restoreLastFile() {
-  if (!hasNativeFileAccess) return;
+  if (!hasNativeFileAccess) {
+    restoreFallbackLastFile();
+    return;
+  }
 
   try {
     const handle = await getRememberedFileHandle();
-    if (!handle || await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') return;
+    if (!handle || await handle.queryPermission({ mode: 'read' }) !== 'granted') return;
     const file = await handle.getFile();
     await loadFromFileObject(file, handle);
   } catch (error) {
     await forgetLastFileHandle();
   }
+}
+
+function restoreFallbackLastFile() {
+  try {
+    const savedFile = JSON.parse(localStorage.getItem(fallbackLastFileKey) || 'null');
+    if (!savedFile || typeof savedFile.text !== 'string') return;
+
+    rawText = savedFile.text;
+    originalText = rawText;
+    undoStack = [];
+    fileHandle = null;
+    currentFileName = savedFile.name || 'tasks.org';
+    filenameEl.textContent = currentFileName;
+    banner.hidden = true;
+    welcome.hidden = true;
+    treeView.hidden = false;
+    renderOrg(rawText);
+    if (!restoreWorkspaceState()) setActiveView('tree');
+    updateFileUi();
+  } catch (error) { }
 }
 
 async function chooseBackupFolder() {
@@ -443,6 +467,14 @@ async function loadFromFileObject(file, handle) {
   undoStack = [];
   fileHandle = handle;
   currentFileName = file.name || 'tasks.org';
+  if (!handle) {
+    try {
+      localStorage.setItem(fallbackLastFileKey, JSON.stringify({
+        name: currentFileName,
+        text: rawText
+      }));
+    } catch (error) { }
+  }
   updateAutosaveUi();
   if (handle) await rememberFileHandle(handle);
   filenameEl.textContent = currentFileName;
