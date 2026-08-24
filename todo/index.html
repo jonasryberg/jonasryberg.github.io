@@ -1,1009 +1,158 @@
 <!doctype html>
-<html lang="sv" class="h-full">
+<html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Org-mode Todo </title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .guide { border-left: 1px solid rgb(148 163 184 / 0.35); }
-    .menu { position: absolute; right: 0; top: 100%; min-width: 10rem; background: white; border: 1px solid rgba(100,116,139,.35); border-radius: .5rem; padding: .25rem; box-shadow: 0 10px 20px rgba(0,0,0,.08); z-index: 30; }
-    .menu-item { font-size: .875rem; padding: .375rem .5rem; border-radius: .375rem; }
-    .menu-item:hover { background: rgb(241 245 249); }
-
-    .dragging { opacity: .45; }
-    .drop-before { border-top: 2px solid rgb(16 185 129); }
-    .drop-after  { border-bottom: 2px solid rgb(16 185 129); }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151922">
+  <title>Org-mode Local</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="h-full bg-slate-50 text-slate-900">
-  <div class="max-w-5xl mx-auto p-4 md:p-8">
-    <header class="flex items-center gap-2 mb-4">
-      <h1 class="text-xl font-semibold tracking-tight">todo</h1>
-      <div class="ml-auto flex items-center gap-2">
-        <button id="openLocal" class="px-2.5 py-1.5 text-sm rounded border" title="Öppna (skrivbar): Använder filhandtag så Spara skriver tillbaka till samma fil. Auto‑spara kan då användas.">Öppna</button>
-        <button id="importBtn" class="px-2.5 py-1.5 text-sm rounded border" title="Importera (läs in): Läser fil utan handtag. Spara laddar ner ny fil, eller använd Spara som… för plats/namn.">Importera</button>
-        <button id="newFileBtn" class="px-2.5 py-1.5 text-sm rounded border" title="Skapa ny fil (Ctrl/Cmd+N)">Ny fil</button>
-        <button id="saveBtn" class="px-2.5 py-1.5 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700" disabled>Spara</button>
-        <button id="saveAsBtn" class="px-2.5 py-1.5 text-sm rounded border" title="Spara som… (Ctrl/Cmd+Shift+S)">Spara som…</button>
-        <span id="savedBadge" class="text-xs px-2 py-1 rounded border" title="Filens sparstatus">—</span>
-        <label class="ml-2 inline-flex items-center gap-1 text-xs select-none" title="Spara automatiskt tillbaka till samma fil (kräver att filen är öppnad via Öppna)"><input id="autoSaveToggle" type="checkbox" class="accent-emerald-600"> Auto‑spara</label>
-        <span id="autosaveBadge" class="text-xs px-2 py-1 rounded border" title="Status för auto‑spara">Av</span>
-      </div>
-    </header>
-
-    <section class="mb-4 p-3 border rounded bg-white">
-      <div class="flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="search" class="flex-1 px-3 py-2 border rounded" placeholder="Sök i rubriker och text…" />
-        <div class="flex gap-2">
-          <button id="expandAll" class="px-2 py-1 text-sm rounded border">Visa alla</button>
-          <button id="collapseAll" class="px-2 py-1 text-sm rounded border">Fäll alla</button>
-        
-          <button id="agendaBtn" class="px-2 py-1 text-sm rounded border" title="Agenda: förfallna och kommande datum">Agenda</button>
-        </div>
-        <span id="modeBadge" class="text-xs px-2 py-1 rounded border">Tomt</span>
-        <span id="fileBadge" class="text-xs px-2 py-1 rounded border" title="Aktiv fil">—</span>
-      </div>
-    </section>
-
-    <section id="agendaPanel" class="mb-4 p-3 border rounded bg-white hidden"></section>
-
-    <main id="tree" class="space-y-1"></main>
-
-    <section class="mt-6 p-3 border rounded bg-white">
-      <div class="flex items-center justify-between mb-2">
-        <div class="font-semibold">Org‑källtext (förhandsvisning)</div>
-        <div class="flex items-center gap-2">
-          <button id="editSourceBtn" class="px-2 py-1 text-sm rounded border" title="Redigera källtext (Ctrl/Cmd+Enter)">Redigera källtext</button>
-          <button id="applySourceBtn" class="px-2 py-1 text-sm rounded border hidden" title="Verkställ ändringar till trädet">Verkställ</button>
-          <button id="cancelSourceBtn" class="px-2 py-1 text-sm rounded border hidden" title="Avbryt källtext‑redigering">Avbryt</button>
-          <button id="downloadBtn" class="px-2 py-1 text-sm rounded border">Ladda ner som .org</button>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true"><span></span></span>
+        <div class="brand-copy">
+          <strong>Org-mode Local</strong>
+          <span>Din lokala arbetsyta</span>
         </div>
       </div>
-      <pre id="preview" class="bg-slate-100 rounded p-3 overflow-auto text-sm max-h-80 whitespace-pre-wrap"></pre>
-      <textarea id="previewEditor" class="hidden w-full mt-2 text-sm border rounded p-2 h-60"></textarea>
-    </section>
+
+      <div class="sidebar-section">
+        <span class="sidebar-label">Arbetsyta</span>
+        <div class="view-tabs" role="tablist" aria-label="Vy">
+          <button id="treeTab" class="view-tab active" type="button" role="tab" aria-selected="true"><span class="tab-mark">●</span>Träd</button>
+          <button id="agendaTab" class="view-tab" type="button" role="tab" aria-selected="false"><span class="tab-mark">◷</span>Agenda</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section sidebar-file-actions">
+        <span class="sidebar-label">Fil</span>
+        <button id="newFile" class="sidebar-button" type="button"><span class="button-mark">＋</span>Ny Org-fil</button>
+        <button id="openFile" class="sidebar-button primary" type="button"><span class="button-mark">↥</span>Öppna fil</button>
+        <button id="saveFile" class="sidebar-button" type="button" disabled><span class="button-mark">↓</span>Spara</button>
+        <button id="saveAsFile" class="sidebar-button" type="button" disabled><span class="button-mark">⇩</span>Spara som…</button>
+        <span id="fileState" class="file-state">Lokal fil</span>
+        <button id="chooseBackupFolder" class="sidebar-button" type="button" title="Välj mappen där dagens backupmapp ska skapas"><span class="button-mark">⌂</span>Välj backupmapp</button>
+        <span id="backupState" class="backup-state">Ingen backupmapp vald</span>
+        <label class="autosave-toggle"><input id="autosaveToggle" type="checkbox"><span>Autospara ändringar</span></label>
+        <span id="autosaveState" class="backup-state">Av</span>
+      </div>
+
+      <div id="recentFiles" class="sidebar-section recent-files" hidden>
+        <span class="sidebar-label">Senast öppnade</span>
+        <div id="recentFilesList" class="recent-files-list"></div>
+      </div>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <div class="sidebar-file">
+        <span class="sidebar-label">Aktuell fil</span>
+        <strong id="filename">Ingen fil öppnad</strong>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="toolbar">
+        <div class="toolbar-heading">
+          <span class="eyebrow">Org-mode</span>
+          <strong>Översikt</strong>
+        </div>
+        <div class="actions">
+          <label class="search-wrap">
+            <span class="sr-only">Sök</span>
+            <input id="search" type="search" placeholder="Sök i filen…" autocomplete="off" disabled>
+          </label>
+          <div class="action-group edit-actions">
+            <button id="newTask" class="primary-soft" type="button" title="Lägg till en ny uppgift på toppnivå" disabled>+ Ny uppgift</button>
+            <span id="dirtyState" class="dirty-state" hidden>0 osparade ändringar</span>
+            <button id="undo" type="button" title="Ångra senaste ändringen" disabled>Ångra</button>
+            <button id="showSource" type="button" title="Visa den modifierade Org-texten" disabled>Visa Org-text</button>
+            <button id="toggleAll" type="button" title="Öppna alla grenar" disabled>Öppna alla</button>
+            <button id="reload" type="button" title="Läs om filen från disk" disabled>Läs om</button>
+          </div>
+        </div>
+      </header>
+
+  <input id="fallbackFileInput" type="file" accept=".org,text/plain" hidden>
+      <main id="content" aria-live="polite">
+        <section id="welcome" class="welcome">
+          <div class="welcome-logo" aria-hidden="true"><span></span></div>
+          <h1>Öppna en Org-mode-fil</h1>
+          <p>Filen stannar på din dator. Webbsidan läser och redigerar den lokalt i webbläsaren.</p>
+          <button id="welcomeOpen" class="primary welcome-button" type="button">Öppna .org-fil</button>
+          <p id="browserNote" class="browser-note"></p>
+        </section>
+
+        <section id="treeView" class="app-view" role="tabpanel" aria-labelledby="treeTab" hidden></section>
+        <section id="agendaView" class="app-view" role="tabpanel" aria-labelledby="agendaTab" hidden></section>
+      </main>
+    </div>
   </div>
 
-  <input id="hiddenFile" type="file" accept=".org,.txt,.md" class="hidden" />
-
-  <script>
-    // ------------------------
-    // Minimal Org parser (v10.2)
-    // ------------------------
-    const CHECKBOX_RE = /^\s*-\s*\[( |x|-)\]\s+(.*)$/i;
-    const DEADLINE_RE = /(^|\s)DEADLINE:\s*<([^>]+)>/i;
-    const SCHEDULED_RE = /(^|\s)SCHEDULED:\s*<([^>]+)>/i;
-
-    const ISO_DATE_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
-    const getISODate = (s)=>{ if(!s) return ''; const m=String(s).match(ISO_DATE_RE); return m? m[1] : ''; };
-    const todayISO = ()=> new Date().toISOString().slice(0,10);
-    const addDaysISO = (iso, days)=>{ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); };
-    const ISO_TIME_RE = /\b([01]\d|2[0-3]):([0-5]\d)\b/;
-    const getISOTime = (s)=>{ if(!s) return ''; const m=String(s).match(ISO_TIME_RE); return m? `${m[1]}:${m[2]}` : ''; };
-
-    // Headline metadata: priority + tags
-    const TAGS_RE = /\s+(:[A-Za-z0-9_@#%:]+:)\s*$/;
-    const PRIORITY_RE = /^\s*\[#([A-Za-z])\]\s*/;
-    function parseHeadlineMeta(text){
-      let rest = (text || '').trimEnd();
-      let tags = [];
-      const tm = rest.match(TAGS_RE);
-      if(tm){
-        tags = tm[1].split(':').filter(Boolean);
-        rest = rest.slice(0, tm.index).trimEnd();
-      }
-      let priority = null;
-      const pm = rest.match(PRIORITY_RE);
-      if(pm){
-        priority = pm[1].toUpperCase();
-        rest = rest.replace(PRIORITY_RE, '').trimStart();
-      }
-      return { title: rest, tags, priority };
-    }
-    function buildHeadlineText(n){
-      const pr = n && n.priority ? `[#${n.priority}] ` : '';
-      const tg = n && n.tags && n.tags.length ? ` :${n.tags.join(':')}:` : '';
-      return `${pr}${(n && n.title) ? n.title : ''}${tg}`.trimEnd();
-    }
-
-
-    const newId = () => Math.random().toString(36).slice(2);
-
-        function parseOrg(text){
-          const lines = text.replace(/\r\n?/g, "\n").split("\n");
-          const root = { id:newId(), level:0, title:"ROOT", todo:null, tags:[], priority:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null };
-          const stack = [root];
-          const headingRe = /^(\*+)\s+(?:(TODO|DONE)\s+)?(.*)$/;
-          let current = root;
-          for(const line of lines){
-            const m = line.match(headingRe);
-            if(m){
-              const level = m[1].length;
-              const todo = m[2] || null;
-              const meta = parseHeadlineMeta(m[3] || "");
-              const node = { id:newId(), level, title:(meta.title||"").trim(), todo, tags:meta.tags||[], priority:meta.priority||null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null };
-              while(stack.length && stack[stack.length-1].level >= level) stack.pop();
-              stack[stack.length-1].children.push(node);
-              stack.push(node);
-              current = node;
-            } else {
-              const d = line.match(DEADLINE_RE);
-              if(d){ current.deadline = d[2]; current.deadlineDate = getISODate(d[2]); continue; }
-              const s = line.match(SCHEDULED_RE);
-              if(s){ current.scheduled = s[2]; current.scheduledDate = getISODate(s[2]); current.scheduledTime = getISOTime(s[2]) || null; continue; }
-              const c = line.match(CHECKBOX_RE);
-              if(c){
-                const st=c[1]; const txt=c[2];
-                const checked = String(st).toLowerCase()==='x' ? true : st==='-' ? null : false;
-                current.checkboxes.push({ id:newId(), text:txt, checked, raw:line });
-                current.body.push(line);
-              } else {
-                current.body.push(line);
-              }
-            }
-          }
-          return root.children;
-        }
-
-        function serializeOrg(nodes){
-          const checkboxLine = (cb) => `- [${cb.checked===true? 'x' : cb.checked===null? '-' : ' '}] ${cb.text}`;
-          const lines = [];
-          const walk = (n)=>{
-            if(n.level>0){
-              const stars='*'.repeat(n.level);
-              const todo = n.todo ? (n.todo + " ") : "";
-              lines.push(`${stars} ${todo}${buildHeadlineText(n)}`.trimEnd());
-            }
-            let cbIdx=0;
-            for(const line of n.body){
-              if(CHECKBOX_RE.test(line)){
-                const cb=n.checkboxes[cbIdx++]; lines.push(cb? checkboxLine(cb): line);
-              } else if(/\b(DEADLINE:|SCHEDULED:)\b/i.test(line)) {
-                // drop leftovers
-              } else { lines.push(line); }
-            }
-            const scheduledOut = n.scheduled || (n.scheduledDate ? (n.scheduledTime ? `${n.scheduledDate} ${n.scheduledTime}` : n.scheduledDate) : null);
-            if(scheduledOut) lines.push(`SCHEDULED: <${scheduledOut}>`);
-            if(n.deadline) lines.push(`DEADLINE: <${n.deadline}>`);
-            n.children.forEach(walk);
-          };
-          nodes.forEach(walk);
-          return lines.join("\n").replace(/\n+$/,'') + "\n";
-        }
-
-    // ------------------------
-    // State & helpers
-    // ------------------------
-    let fileHandle = null;
-    let nodes = null;
-    let raw = '';
-    let query = '';
-    let lastSavedText = '';
-    let currentFileName = '';
-    let previewEdit = false;
-    const autoSave = { enabled: false, timer: null, pending: false };
-
-    const treeEl = document.getElementById('tree');
-    const previewEl = document.getElementById('preview');
-    const modeBadge = document.getElementById('modeBadge');
-
-    function updateAutosaveBadge(text, kind='neutral'){
-      const b = document.getElementById('autosaveBadge');
-      if(!b) return;
-      b.textContent = text;
-      b.className = 'text-xs px-2 py-1 rounded ' + (kind==='ok' ? 'bg-emerald-600 text-white' : kind==='warn' ? 'bg-amber-500 text-white' : kind==='err' ? 'bg-red-600 text-white' : 'border');
-    }
-    function scheduleAutoSave(){
-      clearTimeout(autoSave.timer);
-      autoSave.pending = true;
-      updateAutosaveBadge('Väntar…');
-      autoSave.timer = setTimeout(doAutoSave, 1500);
-    }
-    async function doAutoSave(){
-      autoSave.pending = false;
-      if(!nodes){ updateAutosaveBadge('—'); return; }
-      if(!fileHandle){ updateAutosaveBadge('Ingen fil','warn'); return; }
-      try {
-        const text = serializeOrg(nodes);
-        const w = await fileHandle.createWritable();
-        await w.write(text); await w.close();
-        lastSavedText = text;
-        updateAutosaveBadge('Sparad', 'ok');
-        render();
-      } catch(e){ updateAutosaveBadge('Fel', 'err'); console.error(e); }
-    }
-
-    const setNodes = (next)=>{ nodes = next; document.getElementById('saveBtn').disabled = !nodes; render();
-      try { if (autoSave.enabled && fileHandle && nodes) { const txt = serializeOrg(nodes); if (txt !== lastSavedText) scheduleAutoSave(); } } catch(_) {}
-    };
-    function updateTree(mut){ if(!nodes) return; const copy = structuredClone(nodes); mut(copy); setNodes(copy); }
-    function findAndDo(arr, id, fn){ for(let i=0;i<arr.length;i++){ const n = arr[i]; if(n.id===id) return fn(n, arr, i); if(findAndDo(n.children, id, fn)) return true; } return false; }
-    // Drag & drop reorder helpers (siblings only)
-    const dragState = { id:null, parentId:null };
-
-    function clearDropIndicators(){
-      document.querySelectorAll('.drop-before, .drop-after')
-        .forEach(el=>el.classList.remove('drop-before','drop-after'));
-    }
-
-    function findParentArray(arr, id, parentId=''){
-      for(const n of (arr||[])){
-        if(n.id===id) return { arr, parentId };
-        const res = findParentArray(n.children||[], id, n.id);
-        if(res) return res;
-      }
-      return null;
-    }
-
-    function reorderSiblings(tree, draggedId, targetId, pos){
-      const di = findParentArray(tree, draggedId);
-      const ti = findParentArray(tree, targetId);
-      if(!di || !ti) return false;
-      if(di.parentId !== ti.parentId) return false;
-      if(draggedId === targetId) return false;
-
-      const arr = di.arr;
-      const fromIdx = arr.findIndex(x=>x.id===draggedId);
-      if(fromIdx<0) return false;
-      const dragged = arr.splice(fromIdx, 1)[0];
-
-      const toIdx = arr.findIndex(x=>x.id===targetId);
-      if(toIdx<0) return false;
-      const insertAt = (pos === 'after') ? toIdx+1 : toIdx;
-      arr.splice(insertAt, 0, dragged);
-      return true;
-    }
-
-
-    // Indent / outdent helpers (change level + reparent)
-    function applyLevelDelta(n, delta){
-      n.level = Math.max(1, (n.level||1) + delta);
-      for(const ch of (n.children||[])) applyLevelDelta(ch, delta);
-    }
-
-    function findNodeContext(arr, id, parentNode=null, grandParentNode=null, grandArr=null, parentIndex=null){
-      for(let i=0;i<(arr||[]).length;i++){
-        const n = arr[i];
-        if(n.id===id) return { node:n, arr, index:i, parentNode, grandParentNode, grandArr, parentIndex };
-        const res = findNodeContext(n.children||[], id, n, parentNode, arr, i);
-        if(res) return res;
-      }
-      return null;
-    }
-
-    function indentNode(tree, id){
-      const ctx = findNodeContext(tree, id);
-      if(!ctx) return false;
-      if(ctx.index <= 0) return false; // needs a previous sibling
-      const prev = ctx.arr[ctx.index - 1];
-      if(!prev) return false;
-
-      const node = ctx.arr.splice(ctx.index, 1)[0];
-      prev.children = prev.children || [];
-      prev.children.push(node);
-
-      const newLevel = (prev.level||1) + 1;
-      const delta = newLevel - (node.level||1);
-      if(delta) applyLevelDelta(node, delta);
-      return true;
-    }
-
-    function outdentNode(tree, id){
-      const ctx = findNodeContext(tree, id);
-      if(!ctx || !ctx.parentNode) return false; // already at root
-      if(!ctx.grandArr || ctx.parentIndex==null) return false;
-
-      const node = ctx.arr.splice(ctx.index, 1)[0];
-      const insertAt = ctx.parentIndex + 1;
-      ctx.grandArr.splice(insertAt, 0, node);
-
-      const newLevel = (ctx.parentNode.level||1);
-      const delta = newLevel - (node.level||1);
-      if(delta) applyLevelDelta(node, delta);
-      return true;
-    }
-
-    function isOverdue(date){ const d=getISODate(date); if(!d) return false; return d < todayISO(); }
-    function isToday(date){ const d=getISODate(date); if(!d) return false; return d === todayISO(); }
-    function hasNote(n){ return n.body.some(l=>!CHECKBOX_RE.test(l) && !/\b(DEADLINE:|SCHEDULED:)\b/i.test(l) && l.trim().length>0); }
-
-    // ------------------------
-    // Simple kebab menu
-    // ------------------------
-    function makeKebab(actions){
-      const wrap = document.createElement('div');
-      wrap.className = 'relative';
-      const btn = document.createElement('button');
-      btn.className = 'h-7 w-7 grid place-items-center rounded hover:bg-slate-200';
-      btn.setAttribute('aria-label','Meny');
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
-      const menu = document.createElement('div');
-      menu.className = 'menu hidden';
-      actions.forEach(a=>{
-        if(a==='sep'){ const hr=document.createElement('div'); hr.className='my-1 border-t border-slate-200'; menu.appendChild(hr); return; }
-        const item=document.createElement('button'); item.type='button'; item.className='menu-item w-full text-left'; item.textContent=a.label; item.onclick = ()=>{ hide(); a.onClick(); };
-        if(a.danger) item.style.color = '#dc2626';
-        menu.appendChild(item);
-      });
-      function show(){ menu.classList.remove('hidden'); document.addEventListener('click', onDoc, { once:true }); }
-      function hide(){ menu.classList.add('hidden'); }
-      function onDoc(ev){ if(!wrap.contains(ev.target)) hide(); }
-      btn.onclick = (e)=>{ e.stopPropagation(); menu.classList.contains('hidden')? show(): hide(); };
-      wrap.append(btn, menu);
-      return wrap;
-    }
-
-    // ------------------------
-    // Rendering
-    // ------------------------
-    function render(){
-      modeBadge.textContent = nodes? 'Redigerar' : 'Tomt';
-      const fileBadge = document.getElementById('fileBadge');
-      if(fileBadge){ fileBadge.textContent = nodes ? (currentFileName || '(ej sparad)') : '—'; }
-      const content = nodes? serializeOrg(nodes) : raw;
-      previewEl.textContent = content;
-      const badge = document.getElementById('savedBadge');
-      if(badge){ if(!nodes){ badge.textContent='—'; badge.className='text-xs px-2 py-1 rounded border'; } else { const same = content === lastSavedText; badge.textContent = same ? 'Sparad' : 'Osparad'; badge.className = 'text-xs px-2 py-1 rounded ' + (same ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'); } }
-      treeEl.innerHTML = '';
-      renderAgenda();
-      if(!nodes){ treeEl.innerHTML = `<div class="text-slate-500">Öppna/importera en .org‑fil för att börja, eller klicka <b>Ny fil</b>.</div>`; return; }
-      nodes.forEach((n,i)=> treeEl.appendChild(renderNode(n,'',i,nodes.length)));
-      renderAgenda();
-    }
-
-
-    // ------------------------
-    // Agenda (förfallna + kommande datum)
-    // ------------------------
-    let agendaOpen = false;
-
-    const agendaPanel = document.getElementById('agendaPanel');
-
-    function walkWithPath(arr, fn, path=[]){
-      for(const n of arr){
-        fn(n, path);
-        walkWithPath(n.children || [], fn, [...path, n]);
-      }
-    }
-    function findPath(arr, id, path=[]){
-      for(const n of arr){
-        if(n.id===id) return [...path, n];
-        const res = findPath(n.children || [], id, [...path, n]);
-        if(res) return res;
-      }
-      return null;
-    }
-    function goToNode(id){
-      updateTree(next=>{
-        const path = findPath(next, id) || [];
-        for(const n of path){ n.collapsed = false; }
-      });
-      requestAnimationFrame(()=>{
-        const el = document.getElementById(`node-${id}`);
-        if(!el) return;
-        el.scrollIntoView({behavior:'smooth', block:'center'});
-        el.classList.add('ring-2','ring-emerald-500');
-        setTimeout(()=> el.classList.remove('ring-2','ring-emerald-500'), 1200);
-      });
-    }
-
-    function renderAgenda(){
-      if(!agendaPanel) return;
-      if(!nodes || !agendaOpen){ agendaPanel.classList.add('hidden'); agendaPanel.innerHTML=''; return; }
-      agendaPanel.classList.remove('hidden');
-
-      const today = todayISO();
-      const next7 = addDaysISO(today, 7);
-
-      const items = [];
-      walkWithPath(nodes, (n, path)=>{
-        if(n.todo === 'DONE') return;
-        const deadline = getISODate(n.deadlineDate || n.deadline);
-        const scheduled = getISODate(n.scheduledDate || n.scheduled);
-        if(!deadline && !scheduled) return;
-        items.push({
-          id: n.id,
-          title: buildHeadlineText(n),
-          todo: n.todo,
-          deadline,
-          scheduled,
-          scheduledTime: (n.scheduledTime || getISOTime(n.scheduled) || ''),
-          level: n.level,
-          breadcrumb: path.map(x=>x.title).filter(Boolean).slice(-3).join(' › '),
-          sortKey: deadline ? `${deadline} 00:00` : scheduled ? `${scheduled} ${(n.scheduledTime || getISOTime(n.scheduled) || '00:00')}` : ''
-        });
-      });
-
-      const overdue = items.filter(x=> x.deadline && x.deadline < today);
-      const dueToday = items.filter(x=> x.deadline && x.deadline === today);
-      const schedToday = items.filter(x=> x.scheduled && x.scheduled === today);
-      const upcoming = items.filter(x=>{
-        const d = x.deadline || x.scheduled;
-        return d && d > today && d <= next7;
-      }).sort((a,b)=> (a.sortKey||'').localeCompare(b.sortKey||''));
-
-      const mkRow = (x, kind='')=>{
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 py-1';
-        const left = document.createElement('div');
-        left.className = 'min-w-0 flex-1';
-        const t = document.createElement('div');
-        t.className = 'truncate font-medium';
-        t.textContent = x.title;
-        const sub = document.createElement('div');
-        sub.className = 'text-xs text-slate-500 truncate';
-        sub.textContent = x.breadcrumb ? x.breadcrumb : '';
-        left.append(t, sub);
-
-        const badges = document.createElement('div');
-        badges.className = 'flex items-center gap-2';
-        if(x.scheduled){
-          const b=document.createElement('span');
-          b.className='text-xs px-2 py-1 rounded border';
-          b.textContent = `SCHEDULED ${x.scheduled}${x.scheduledTime ? ' ' + x.scheduledTime : ''}`;
-          badges.appendChild(b);
-        }
-        if(x.deadline){
-          const b=document.createElement('span');
-          b.className='text-xs px-2 py-1 rounded ' + (x.deadline < today ? 'bg-red-600 text-white' : x.deadline === today ? 'bg-amber-600 text-white' : 'border');
-          b.textContent = `DEADLINE ${x.deadline}`;
-          badges.appendChild(b);
-        }
-
-        const go = document.createElement('button');
-        go.className = 'px-2 py-1 text-sm rounded border';
-        go.textContent = 'Gå';
-        go.onclick = ()=> goToNode(x.id);
-
-        row.append(left, badges, go);
-        return row;
-      };
-
-      agendaPanel.innerHTML = '';
-      const header = document.createElement('div');
-      header.className = 'flex items-center gap-2';
-      header.innerHTML = `<div class="font-semibold">Agenda</div>
-        <div class="text-xs px-2 py-1 rounded border">Förfallna: ${overdue.length}</div>
-        <div class="text-xs px-2 py-1 rounded border">Idag: ${dueToday.length + schedToday.length}</div>
-        <div class="text-xs px-2 py-1 rounded border">7 dagar: ${upcoming.length}</div>`;
-      const close = document.createElement('button');
-      close.className = 'ml-auto px-2 py-1 text-sm rounded border';
-      close.textContent = 'Stäng';
-      close.onclick = ()=> { agendaOpen=false; idbSet('agendaOpen', false).catch(()=>{}); render(); };
-      header.appendChild(close);
-      agendaPanel.appendChild(header);
-
-      const sections = [
-        { title: 'Förfallna', arr: overdue, empty: 'Inga förfallna DEADLINE.' },
-        { title: 'Idag', arr: [...dueToday, ...schedToday].sort((a,b)=> (a.sortKey||'').localeCompare(b.sortKey||'')), empty: 'Inget idag.' },
-        { title: 'Kommande 7 dagar', arr: upcoming, empty: 'Inget kommande inom 7 dagar.' },
-      ];
-
-      for(const s of sections){
-        const h = document.createElement('div');
-        h.className = 'mt-3 mb-1 text-sm font-semibold text-slate-700';
-        h.textContent = s.title;
-        agendaPanel.appendChild(h);
-        if(!s.arr.length){
-          const p=document.createElement('div');
-          p.className='text-sm text-slate-500';
-          p.textContent = s.empty;
-          agendaPanel.appendChild(p);
-        } else {
-          const box=document.createElement('div');
-          box.className='divide-y';
-          s.arr.forEach(x=> box.appendChild(mkRow(x)));
-          agendaPanel.appendChild(box);
-        }
-      }
-    }
-
-    function guides(level){ const wrap = document.createElement('div'); wrap.className = 'flex items-stretch select-none'; for(let i=0;i<Math.max(0, level); i++){ const g = document.createElement('div'); g.className = 'w-4 md:w-6 -ml-px guide'; wrap.appendChild(g); } return wrap; }
-
-        function renderNode(node, parentId='', idx=0, siblingCount=0){
-          const wrapper = document.createElement('div');
-          wrapper.id = `node-${node.id}`;
-          wrapper.dataset.parentId = parentId || '';
-          wrapper.className = 'rounded-2xl p-2 hover:bg-slate-100 transition';
-    
-          const row = document.createElement('div');
-          row.className = 'flex items-center gap-2 py-1';
-    
-          const q = (query||'').trim();
-          const hay = [
-            node.title || '',
-            node.todo || '',
-            (node.priority || ''),
-            (node.tags || []).join(' '),
-            ...(node.body || []),
-          ].join(' ').toLowerCase();
-          const match = !q || hay.includes(q);
-          if(!match) row.classList.add('opacity-50');
-    
-          // drag handle (reorder among siblings)
-          const handle = document.createElement('span');
-          handle.textContent = '≡';
-          handle.className = 'select-none cursor-grab px-2 text-slate-400 hover:text-slate-700';
-          handle.draggable = true;
-          handle.title = 'Dra för att flytta (syskon)';
-          handle.addEventListener('dragstart', (e)=>{
-            dragState.id = node.id;
-            dragState.parentId = parentId || '';
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', node.id);
-            wrapper.classList.add('dragging');
-          });
-          handle.addEventListener('dragend', ()=>{
-            wrapper.classList.remove('dragging');
-            dragState.id = null;
-            dragState.parentId = null;
-            clearDropIndicators();
-          });
-    
-          wrapper.addEventListener('dragover', (e)=>{
-            if(!dragState.id || dragState.id===node.id) return;
-            if((parentId || '') !== (dragState.parentId || '')) return; // only siblings
-            e.preventDefault();
-            clearDropIndicators();
-            const r = wrapper.getBoundingClientRect();
-            const pos = (e.clientY < r.top + r.height/2) ? 'before' : 'after';
-            wrapper.classList.add(pos==='before' ? 'drop-before' : 'drop-after');
-            wrapper.dataset.dropPos = pos;
-          });
-          wrapper.addEventListener('dragleave', ()=>{
-            wrapper.classList.remove('drop-before','drop-after');
-          });
-          wrapper.addEventListener('drop', (e)=>{
-            if(!dragState.id || dragState.id===node.id) return;
-            if((parentId || '') !== (dragState.parentId || '')) return;
-            e.preventDefault();
-            const pos = wrapper.dataset.dropPos || 'before';
-            wrapper.classList.remove('drop-before','drop-after');
-            updateTree(next=>{ reorderSiblings(next, dragState.id, node.id, pos); });
-          });
-    
-          const chevron = document.createElement('button');
-          chevron.className = 'h-7 w-7 grid place-items-center rounded hover:bg-slate-200';
-          chevron.innerHTML = node.collapsed
-            ? '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
-            : '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>';
-          chevron.onclick = ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.collapsed = !n.collapsed; return true; }); });
-    
-          const pill = document.createElement('button');
-          pill.className = (node.todo==='TODO' ? 'bg-amber-500 text-white' : node.todo==='DONE' ? 'bg-emerald-600 text-white' : 'border') + ' text-xs px-2 py-1 rounded';
-          pill.textContent = node.todo || 'NONE';
-          pill.title = 'Klicka för att växla TODO/DONE';
-          pill.onclick = ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.todo = n.todo==='TODO'? 'DONE' : n.todo==='DONE'? null : 'TODO'; return true; }); });
-    
-          const titleBtn = document.createElement('button');
-          titleBtn.className = 'text-left font-medium truncate flex-1';
-          titleBtn.title = 'Klicka för att redigera titel';
-          titleBtn.dataset.id = node.id;
-          titleBtn.textContent = node.title;
-          titleBtn.onclick = ()=> startInlineTitleEdit(node);
-    
-          const meta = document.createElement('div');
-          meta.className = 'flex items-center gap-1 flex-wrap';
-          if(node.priority){
-            const pr = document.createElement('span');
-            pr.className = 'text-xs px-2 py-1 rounded border bg-slate-50';
-            pr.textContent = `#${node.priority}`;
-            pr.title = 'Prioritet';
-            meta.appendChild(pr);
-          }
-          if(node.tags && node.tags.length){
-            const tg = document.createElement('span');
-            tg.className = 'text-xs px-2 py-1 rounded border bg-slate-50';
-            const shown = node.tags.slice(0,3);
-            const more = node.tags.length>3 ? ` +${node.tags.length-3}` : '';
-            tg.textContent = `:${shown.join(':')}:` + more;
-            tg.title = 'Taggar';
-            meta.appendChild(tg);
-          }
-    
-          const right = document.createElement('div');
-          right.className = 'ml-auto flex items-center gap-2 relative';
-    
-          if(node.scheduled || node.scheduledDate){
-            const raw = node.scheduled || node.scheduledDate;
-            const d = getISODate(raw) || String(raw);
-            const t = node.scheduledTime || getISOTime(raw);
-            const when = t ? `${d} ${t}` : d;
-            const b=document.createElement('span');
-            b.className='text-xs px-2 py-1 rounded border';
-            b.textContent = `SCHEDULED ${when}`;
-            right.appendChild(b);
-          }
-          if(node.deadline || node.deadlineDate){
-            const raw = node.deadline || node.deadlineDate;
-            const when = getISODate(raw)||String(raw);
-            const b=document.createElement('span');
-            b.className='text-xs px-2 py-1 rounded bg-amber-600 text-white';
-            if(isOverdue(when)) { b.className='text-xs px-2 py-1 rounded bg-red-600 text-white'; }
-            b.textContent = `DEADLINE ${when}`;
-            right.appendChild(b);
-          }
-    
-          const canIndent = idx > 0;
-          const canOutdent = !!(parentId && parentId.length);
-
-          const kebabActions = [
-            { label: 'Växla TODO/DONE', onClick: ()=> pill.click() },
-            { label: 'Lägg till barn', onClick: ()=> updateTree(next=>{ findAndDo(next, node.id, n=>{ n.children.push({ id:newId(), level:n.level+1, title:'Ny uppgift', todo:'TODO', tags:[], priority:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null }); n.collapsed=false; return true; }); }) },
-            { label: 'Lägg till syskon', onClick: ()=> updateTree(next=>{ findAndDo(next, node.id, (n,parent,idx)=>{ if(!parent) return false; const sibling={ id:newId(), level:n.level, title:'Ny uppgift', todo:'TODO', tags:[], priority:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null }; parent.splice(idx+1,0,sibling); return true; }); }) },
-            { label: 'Notering', onClick: ()=> toggleNoteEditor(node.id) },
-            { label: 'Datum', onClick: ()=> toggleDateEditor(node.id) },
-            ];
-
-          if(canIndent){
-            kebabActions.push({ label: '→ Indenta', onClick: ()=> updateTree(next=>{ indentNode(next, node.id); }) });
-          }
-          if(canOutdent){
-            kebabActions.push({ label: '← Outdenta', onClick: ()=> updateTree(next=>{ outdentNode(next, node.id); }) });
-          }
-
-          kebabActions.push('sep',
-            { label: 'Ta bort', danger:true, onClick: ()=> updateTree(next=>{ const remove=(arr)=>{ const i=arr.findIndex(x=>x.id===node.id); if(i>=0){ arr.splice(i,1); return true;} for(const c of arr) if(remove(c.children)) return true; return false; }; remove(next); }) }
-          );
-
-          const kebab = makeKebab(kebabActions);
-    
-          // quick add-sibling button
-          const addSiblingQuick = document.createElement('button');
-          addSiblingQuick.className = 'h-7 w-7 grid place-items-center rounded hover:bg-slate-200';
-          addSiblingQuick.title = 'Nytt syskon';
-          addSiblingQuick.setAttribute('aria-label','Nytt syskon');
-          addSiblingQuick.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
-          addSiblingQuick.onclick = ()=> updateTree(next=>{ findAndDo(next, node.id, (n,parent,idx)=>{ if(!parent) return false; const sibling = { id:newId(), level:n.level, title:'Ny uppgift', todo:'TODO', tags:[], priority:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null }; parent.splice(idx+1,0,sibling); return true; }); });
-    
-          row.appendChild(guides(node.level-1));
-          row.appendChild(handle);
-                    row.appendChild(chevron);
-          row.appendChild(pill);
-          row.appendChild(titleBtn);
-          if(meta.childNodes.length) row.appendChild(meta);
-          row.appendChild(right);
-          right.appendChild(addSiblingQuick);
-          right.appendChild(kebab);
-    
-          const body = document.createElement('div');
-          body.className='ml-10 pl-3 guide space-y-3';
-    
-          const noteWrap = document.createElement('div');
-          noteWrap.id = `note-${node.id}`;
-          body.appendChild(noteWrap);
-          if(node.noteText){
-            const pre = document.createElement('pre');
-            pre.className='text-sm whitespace-pre-wrap p-3 bg-white border rounded';
-            pre.textContent = node.noteText;
-            noteWrap.appendChild(pre);
-          }
-    
-          const dateWrap = document.createElement('div');
-          dateWrap.id = `date-${node.id}`;
-          body.appendChild(dateWrap);
-    
-          node.checkboxes.forEach((cb, idx)=>{
-            const line = document.createElement('div');
-            line.className='flex items-center gap-2 -mt-1';
-            const box = document.createElement('button');
-            box.className='inline-flex h-5 w-5 items-center justify-center rounded-sm border';
-            const setBox = ()=>{
-              box.innerHTML = cb.checked? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : cb.checked===null? '-' : '';
-              if(cb.checked){ box.classList.add('bg-emerald-500','border-emerald-500','text-white'); }
-              else { box.classList.remove('bg-emerald-500','border-emerald-500','text-white'); }
-            };
-            setBox();
-            box.onclick = ()=>{ updateTree(next=>{ findAndDo(next, node.id, n=>{ const item = n.checkboxes[idx]; if(!item) return true; item.checked = item.checked===true? false : item.checked===false? null : true; return true; }); }); };
-            const txt = document.createElement('span');
-            txt.className='text-sm';
-            txt.textContent = cb.text;
-            line.append(box, txt);
-            body.appendChild(line);
-          });
-    
-          const nodeBlock = document.createElement('div');
-          nodeBlock.appendChild(row);
-          if(!node.collapsed) nodeBlock.appendChild(body);
-          wrapper.appendChild(nodeBlock);
-    
-          if(!node.collapsed && node.children && node.children.length){
-            const kids = document.createElement('div');
-            kids.className = 'space-y-1';
-            node.children.forEach((ch,i)=> kids.appendChild(renderNode(ch, node.id, i, node.children.length)));
-            wrapper.appendChild(kids);
-          }
-          return wrapper;
-        }
-
-        function startInlineTitleEdit(node){
-          render();
-          requestAnimationFrame(()=>{
-            const el = document.querySelector(`button.text-left.font-medium[data-id="${node.id}"]`);
-            if(!el) return;
-            const input=document.createElement('input');
-            input.value=buildHeadlineText(node);
-            input.className='bg-transparent outline-none border-b border-blue-500 px-1 text-sm flex-1';
-            input.onkeydown=(e)=>{
-              if(e.key==='Enter') input.blur();
-              if(e.key==='Escape'){ input.value=buildHeadlineText(node); input.blur(); }
-            };
-            input.onblur=()=>{
-              const val=input.value;
-              updateTree(next=>{
-                findAndDo(next, node.id, n=>{
-                  const meta=parseHeadlineMeta(val||'');
-                  n.title=(meta.title||'').trim();
-                  n.tags=meta.tags||[];
-                  n.priority=meta.priority||null;
-                  return true;
-                });
-              });
-            };
-            el.replaceWith(input);
-            input.focus();
-          });
-        }
-
-    function mkBtn(label, variant, onClick){ const b=document.createElement('button'); b.textContent=label; b.className='px-2 py-1 rounded text-sm '+(variant==='border'?'border':'bg-slate-800 text-white'); b.onclick=onClick; return b; }
-
-    function toggleNoteEditor(id){ const wrap = document.getElementById(`note-${id}`); if(!wrap) return; if(wrap.dataset.open==='1'){ wrap.dataset.open='0'; render(); return; } wrap.dataset.open='1'; const currentText = Array.from(wrap.childNodes).map(n=> n.textContent||'').join('\n').trim(); wrap.innerHTML = ''; const label = document.createElement('div'); label.className='text-xs text-slate-500'; label.textContent='Notering'; const ta = document.createElement('textarea'); ta.className='w-full mt-1 text-sm bg-white border rounded p-2'; ta.rows=4; ta.value=currentText; const status = document.createElement('span'); status.className='text-xs ml-2'; const bar = document.createElement('div'); bar.className='flex items-center gap-2 mt-2'; const save = document.createElement('button'); save.className='px-2 py-1 rounded border text-sm'; save.textContent='Spara notering'; save.onclick = ()=>{ updateTree(next=>{ findAndDo(next, id, n=>{ const onlyCbs = n.body.filter(l=>CHECKBOX_RE.test(l)); n.body = [...ta.value.split('\n'), ...onlyCbs]; return true; }); }); status.textContent='Sparad'; setTimeout(()=>status.textContent='', 1500); }; const close = document.createElement('button'); close.className='px-2 py-1 rounded border text-sm'; close.textContent='Stäng'; close.onclick = ()=>{ wrap.dataset.open='0'; render(); }; ta.addEventListener('input', ()=>{ status.textContent='Osparad'; }); bar.append(save, close, status); wrap.append(label, ta, bar); }
-
-        function toggleDateEditor(id){
-          const wrap = document.getElementById(`date-${id}`);
-          if(!wrap) return;
-          if(wrap.dataset.open==='1'){ wrap.dataset.open='0'; wrap.innerHTML=''; return; }
-          wrap.dataset.open='1';
-    
-          let schedDate='', schedTime='', deadDate='';
-          findAndDo(nodes||[], id, n=>{
-            schedDate = getISODate(n.scheduledDate || n.scheduled) || '';
-            schedTime = n.scheduledTime || getISOTime(n.scheduled) || '';
-            deadDate  = getISODate(n.deadlineDate || n.deadline) || '';
-            return true;
-          });
-    
-          wrap.innerHTML = '';
-          const label = document.createElement('div');
-          label.className='text-xs text-slate-600';
-          label.textContent = 'Datum';
-          const grid = document.createElement('div');
-          grid.className='grid grid-cols-1 md:grid-cols-2 gap-2 mt-1';
-    
-          const sBox = document.createElement('div');
-          const sL = document.createElement('div');
-          sL.className='text-xs text-slate-500 mb-1';
-          sL.textContent='SCHEDULED';
-          const sDate = document.createElement('input');
-          sDate.type='date';
-          sDate.className='border rounded px-2 py-1 w-full';
-          sDate.value=schedDate;
-          const sTime = document.createElement('input');
-          sTime.type='time';
-          sTime.className='border rounded px-2 py-1 w-full mt-2';
-          sTime.value=schedTime;
-    
-          sBox.append(sL, sDate, sTime);
-    
-          const dBox = document.createElement('div');
-          const dL = document.createElement('div');
-          dL.className='text-xs text-slate-500 mb-1';
-          dL.textContent='DEADLINE';
-          const dDate = document.createElement('input');
-          dDate.type='date';
-          dDate.className='border rounded px-2 py-1 w-full';
-          dDate.value=deadDate;
-          dBox.append(dL, dDate);
-    
-          grid.append(sBox, dBox);
-    
-          const bar = document.createElement('div');
-          bar.className='flex items-center gap-2 mt-2';
-    
-          const save = document.createElement('button');
-          save.className='px-2 py-1 text-sm rounded border bg-slate-800 text-white';
-          save.textContent='Spara';
-          save.onclick = ()=>{
-            const sd = sDate.value || '';
-            const st = sTime.value || '';
-            const dd = dDate.value || '';
-            updateTree(next=>{
-              findAndDo(next, id, n=>{
-                // keep body clean from old timestamp lines
-                n.body = n.body.filter(l=>!/\b(DEADLINE:|SCHEDULED:)\b/i.test(l));
-    
-                if(sd){
-                  n.scheduledDate = sd;
-                  n.scheduledTime = st || null;
-                  n.scheduled = st ? `${sd} ${st}` : sd;
-                } else {
-                  n.scheduled = null; n.scheduledDate = null; n.scheduledTime = null;
-                }
-    
-                if(dd){
-                  n.deadlineDate = dd;
-                  n.deadline = dd;
-                } else {
-                  n.deadline = null; n.deadlineDate = null;
-                }
-                return true;
-              });
-            });
-          };
-    
-          const clear = document.createElement('button');
-          clear.className='px-2 py-1 text-sm rounded border';
-          clear.textContent='Rensa';
-          clear.onclick = ()=>{
-            sDate.value=''; sTime.value=''; dDate.value='';
-            updateTree(next=>{
-              findAndDo(next, id, n=>{
-                n.scheduled = null; n.scheduledDate = null; n.scheduledTime = null;
-                n.deadline = null; n.deadlineDate = null;
-                n.body = n.body.filter(l=>!/\b(DEADLINE:|SCHEDULED:)\b/i.test(l));
-                return true;
-              });
-            });
-          };
-    
-          const close = document.createElement('button');
-          close.className='px-2 py-1 text-sm rounded border';
-          close.textContent='Stäng';
-          close.onclick = ()=>{ wrap.dataset.open='0'; wrap.innerHTML=''; };
-    
-          wrap.append(label, grid, bar);
-          bar.append(save, clear, close);
-        }
-
-    // ------------------------
-    // Source editor helpers
-    // ------------------------
-    function countHeadings(txt){ return (txt.match(/^\*+\s/mg) || []).length; }
-    function percentDiff(a,b){ if(a===0&&b===0) return 0; return Math.abs(a-b)/Math.max(1, Math.max(a,b)); }
-    function showToast(msg, kind='info'){
-      let el = document.getElementById('toast');
-      if(!el){ el = document.createElement('div'); el.id='toast'; Object.assign(el.style,{position:'fixed',bottom:'16px',right:'16px',padding:'10px 12px',borderRadius:'8px',fontSize:'12px',boxShadow:'0 10px 20px rgba(0,0,0,.15)'}); document.body.appendChild(el); }
-      el.style.background = kind==='error' ? '#fee2e2' : kind==='warn' ? '#fef3c7' : '#e2e8f0';
-      el.style.color = '#0f172a';
-      el.style.border = '1px solid ' + (kind==='error' ? '#fecaca' : kind==='warn' ? '#fde68a' : '#cbd5e1');
-      el.textContent = msg; el.style.opacity='1';
-      clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0'; }, 2500);
-    }
-    function setPreviewEdit(on){
-      previewEdit = !!on;
-      const preview = document.getElementById('preview');
-      const editor = document.getElementById('previewEditor');
-      const applyBtn = document.getElementById('applySourceBtn');
-      const cancelBtn = document.getElementById('cancelSourceBtn');
-      const editBtn = document.getElementById('editSourceBtn');
-      if(previewEdit){
-        const text = nodes ? serializeOrg(nodes) : (raw || '');
-        editor.value = text;
-        editor.classList.remove('hidden');
-        preview.classList.add('hidden');
-        applyBtn.classList.remove('hidden');
-        cancelBtn.classList.remove('hidden');
-        editBtn.classList.add('hidden');
-      } else {
-        editor.classList.add('hidden');
-        preview.classList.remove('hidden');
-        applyBtn.classList.add('hidden');
-        cancelBtn.classList.add('hidden');
-        editBtn.classList.remove('hidden');
-      }
-    }
-
-    // ------------------------
-    // File + persistence
-    // ------------------------
-    async function openLocal(){ if(!window.showOpenFilePicker){ alert('Din webbläsare saknar stöd för File System Access API. Använd Chrome/Edge eller importera fil.'); return; } try{ const [handle] = await window.showOpenFilePicker({ types:[{ description:'Org-mode', accept:{ 'text/plain': ['.org','.txt','.md'] } }] }); fileHandle = handle; const file = await handle.getFile(); const text = await file.text(); raw = text; lastSavedText = text; currentFileName = handle.name || ''; setNodes(parseOrg(text)); await idbSet('lastHandle', handle); }catch(e){ /* canceled */ } }
-
-    async function save(){ if(!nodes) return; const text = serializeOrg(nodes); if(fileHandle){ const w = await fileHandle.createWritable(); await w.write(text); await w.close(); await idbSet('lastHandle', fileHandle); } else { download('export.org', text); } lastSavedText = text; render(); }
-
-    async function saveAs(){ try{ const text = nodes? serializeOrg(nodes) : (raw || ''); if(window.showSaveFilePicker){ const handle = await window.showSaveFilePicker({ suggestedName: 'todo.org', types:[{ description:'Org-mode', accept:{ 'text/plain':['.org'] } }] }); fileHandle = handle; currentFileName = handle.name || ''; const w = await handle.createWritable(); await w.write(text); await w.close(); await idbSet('lastHandle', fileHandle); lastSavedText = text; render(); } else { download('export.org', text); lastSavedText = text; render(); } } catch(e){ /* canceled */ } }
-
-    function newFile(){ fileHandle = null; raw=''; const initial=[{ id:newId(), level:1, title:'Ny uppgift', todo:'TODO', tags:[], priority:null, children:[], body:[], checkboxes:[], collapsed:false, scheduled:null, scheduledDate:null, scheduledTime:null, deadline:null, deadlineDate:null }]; lastSavedText=''; currentFileName='Ny fil'; setNodes(initial); updateAutosaveBadge('Av'); const t=document.getElementById('autoSaveToggle'); if(t) t.checked=false; autoSave.enabled=false; }
-
-    function download(name, text){ const blob = new Blob([text], {type:'text/plain;charset=utf-8'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-
-    function idbOpen(){ return new Promise((resolve, reject)=>{ const req=indexedDB.open('org-webapp',1); req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv'); }; req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error); }); }
-    async function idbSet(key, value){ const db=await idbOpen(); await new Promise((res, rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(value, key); tx.oncomplete=()=>{ db.close(); res(); }; tx.onerror=()=>{ const err=tx.error; db.close(); rej(err); }; }); }
-    async function idbGet(key){ const db=await idbOpen(); return await new Promise((res, rej)=>{ const tx=db.transaction('kv','readonly'); const req=tx.objectStore('kv').get(key); req.onsuccess=()=>{ const v=req.result; db.close(); res(v); }; req.onerror=()=>{ const err=req.error; db.close(); rej(err); }; }); }
-    async function idbDel(key){ const db=await idbOpen(); await new Promise((res, rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').delete(key); tx.oncomplete=()=>{ db.close(); res(); }; tx.onerror=()=>{ const err=tx.error; db.close(); rej(err); }; }); }
-
-    async function tryAutoLoadLast(){ try{ const last = await idbGet('lastHandle'); if(!last) return false; const q = await last.queryPermission?.({mode:'read'}); if(q==='granted' || (await last.requestPermission?.({mode:'read'}))==='granted'){ fileHandle = last; const text = await (await last.getFile()).text(); raw = text; lastSavedText = text; currentFileName = last.name || ''; setNodes(parseOrg(text)); return true; } }catch{} return false; }
-
-    // ------------------------
-    // Wire up UI
-    // ------------------------
-    const openBtn = document.getElementById('openLocal');
-    const saveBtn = document.getElementById('saveBtn');
-    const saveAsBtn = document.getElementById('saveAsBtn');
-    const newFileBtn = document.getElementById('newFileBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const importBtn = document.getElementById('importBtn');
-    const hiddenFile = document.getElementById('hiddenFile');
-    const editSourceBtn = document.getElementById('editSourceBtn');
-    const applySourceBtn = document.getElementById('applySourceBtn');
-    const cancelSourceBtn = document.getElementById('cancelSourceBtn');
-    const autoSaveToggle = document.getElementById('autoSaveToggle');
-    const agendaBtn = document.getElementById('agendaBtn');
-
-    openBtn.onclick = openLocal;
-    saveBtn.onclick = save;
-    saveAsBtn.onclick = saveAs;
-    newFileBtn.onclick = newFile;
-    downloadBtn.onclick = ()=>{ const text = nodes? serializeOrg(nodes) : raw; download('export.org', text); };
-    importBtn.onclick = ()=> hiddenFile.click();
-    hiddenFile.onchange = async (e)=>{ const f = e.target.files && e.target.files[0]; if(!f) return; const text = await f.text(); fileHandle=null; raw=text; lastSavedText=text; currentFileName = f.name || ''; setNodes(parseOrg(text)); e.target.value=''; await idbDel('lastHandle'); updateAutosaveBadge('Av'); autoSave.enabled=false; if(autoSaveToggle) autoSaveToggle.checked=false; };
-
-    if(editSourceBtn) editSourceBtn.onclick = ()=> setPreviewEdit(true);
-    if(cancelSourceBtn) cancelSourceBtn.onclick = ()=> { setPreviewEdit(false); showToast('Avbröt källtext‑redigering','info'); };
-    if(applySourceBtn) applySourceBtn.onclick = ()=>{
-      const text = document.getElementById('previewEditor').value || '';
-      const beforeHead = countHeadings(text);
-      const parsed = parseOrg(text);
-      const serialized = serializeOrg(parsed);
-      const afterHead = countHeadings(serialized);
-      const lenChange = percentDiff(text.length, serialized.length);
-      const headingDrop = beforeHead>0 && afterHead < Math.floor(0.6*beforeHead);
-      const largeLenChange = lenChange > 0.15;
-      if(headingDrop || largeLenChange){
-        const msg = `Det verkar finnas större förändringar i strukturen (rubriker före: ${beforeHead}, efter: ${afterHead}, längdskillnad: ${(lenChange*100).toFixed(0)}%). Vill du verkställa ändå?`;
-        if(!confirm(msg)) { showToast('Inga ändringar verkställdes','warn'); return; }
-      }
-      raw = text; setNodes(parsed); setPreviewEdit(false); showToast('Källtext tillämpad','info');
-    };
-
-    document.addEventListener('keydown', (e)=>{ 
-      if(previewEdit && (e.ctrlKey||e.metaKey) && e.key==='Enter'){
-        e.preventDefault(); applySourceBtn?.click();
-      }
-    });
-
-    document.getElementById('search').oninput = (e)=>{ query = (e.target.value||'').toLowerCase(); render(); };
-    document.getElementById('expandAll').onclick = ()=> updateTree(next=>{ const mark=n=>{ n.collapsed=false; n.children.forEach(mark); }; next.forEach(mark); });
-    document.getElementById('collapseAll').onclick = ()=> updateTree(next=>{ const mark=n=>{ n.collapsed=true; n.children.forEach(mark); }; next.forEach(mark); });
-
-    if(agendaBtn) agendaBtn.onclick = ()=>{ agendaOpen = !agendaOpen; idbSet('agendaOpen', agendaOpen).catch(()=>{}); render(); };
-
-    // Restore autosave preference
-    (async ()=>{
-      try{
-        const val = await idbGet('autosaveEnabled');
-        autoSave.enabled = !!val;
-        if(autoSaveToggle) autoSaveToggle.checked = autoSave.enabled;
-        updateAutosaveBadge(autoSave.enabled ? 'På' : 'Av');
-      }catch{ updateAutosaveBadge('Av'); }
-    })();
-
-    // Restore agenda preference
-    (async ()=>{
-      try{ const val = await idbGet('agendaOpen'); agendaOpen = !!val; }catch{ agendaOpen = false; }
-      // small visual hint
-      if(agendaBtn && agendaOpen){ agendaBtn.classList.add('bg-slate-800','text-white'); }
-      renderAgenda();
-    })();
-
-    if(autoSaveToggle) autoSaveToggle.addEventListener('change', async (e)=>{
-      autoSave.enabled = !!e.target.checked;
-      await idbSet('autosaveEnabled', autoSave.enabled);
-      updateAutosaveBadge(autoSave.enabled ? 'På' : 'Av');
-      if(autoSave.enabled && fileHandle && nodes){ scheduleAutoSave(); }
-    });
-
-    window.addEventListener('keydown', (e)=>{ 
-      if(!previewEdit && e.key==='/' && !(e.ctrlKey||e.metaKey||e.altKey)){ const s=document.getElementById('search'); if(s){ e.preventDefault(); s.focus(); } }
-      if(!previewEdit && e.key==='Escape'){ const s=document.getElementById('search'); if(document.activeElement===s){ s.value=''; query=''; render(); } }
-      if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='s'){ e.preventDefault(); save(); }
-      if((e.ctrlKey||e.metaKey) && e.shiftKey && e.key.toLowerCase()==='s'){ e.preventDefault(); saveAs(); }
-      if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='n'){ e.preventDefault(); newFile(); }
-    });
-
-    render();
-    tryAutoLoadLast();
-  </script>
+  <dialog id="editDialog" class="edit-dialog">
+    <form id="editForm" method="dialog">
+      <div class="dialog-head">
+        <div>
+          <h2>Redigera uppgift</h2>
+          <p>Ändringen görs lokalt i Org-texten.</p>
+        </div>
+        <button id="editClose" class="icon-button" type="button" aria-label="Stäng">×</button>
+      </div>
+      <div class="edit-grid">
+        <label class="field field-wide"><span>Titel</span><input id="editTitle" type="text" required></label>
+        <label class="field"><span>Status</span><select id="editTodo"><option value="">Ingen</option><option>TODO</option><option>NEXT</option><option>WAITING</option><option>DONE</option><option>CANCELLED</option></select></label>
+        <label class="field"><span>Taggar</span><input id="editTags" type="text" placeholder="jobb artikel"></label>
+        <label class="field"><span>Scheduled</span><input id="editScheduled" type="datetime-local"></label>
+        <label class="field"><span>Deadline</span><input id="editDeadline" type="datetime-local"></label>
+        <label class="field field-wide"><span>Innehåll (Org-text)</span><textarea id="editBody" rows="11" spellcheck="false"></textarea><small>Okänd Org-syntax lämnas orörd. Fälten ovan uppdaterar SCHEDULED/DEADLINE med datum och valfri tid.</small></label>
+      </div>
+      <div class="dialog-actions"><button id="editCancel" type="button">Avbryt</button><button id="editSave" class="primary" type="submit">Spara ändring</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="createDialog" class="edit-dialog">
+    <form id="createForm" method="dialog">
+      <div class="dialog-head">
+        <div><h2>Lägg till uppgift</h2><p id="createTarget">Ny uppgift på toppnivå</p></div>
+        <button id="createClose" class="icon-button" type="button" aria-label="Stäng">×</button>
+      </div>
+      <div class="edit-grid">
+        <label class="field field-wide"><span>Titel</span><input id="createTitle" type="text" required></label>
+        <label class="field"><span>Status</span><select id="createTodo"><option value="">Ingen</option><option selected>TODO</option><option>NEXT</option><option>WAITING</option><option>DONE</option><option>CANCELLED</option></select></label>
+        <label class="field"><span>Taggar</span><input id="createTags" type="text" placeholder="jobb artikel"></label>
+        <label class="field"><span>Scheduled</span><input id="createScheduled" type="datetime-local"></label>
+        <label class="field"><span>Deadline</span><input id="createDeadline" type="datetime-local"></label>
+        <label class="field field-wide"><span>Innehåll (Org-text)</span><textarea id="createBody" rows="8" spellcheck="false" placeholder="Anteckningar, listor, checkboxar…"></textarea><small>Uppgiften läggs till lokalt och kan ångras före sparning.</small></label>
+      </div>
+      <div class="dialog-actions"><button id="createCancel" type="button">Avbryt</button><button id="createSave" class="primary" type="submit">Lägg till uppgift</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="moveDialog" class="edit-dialog move-dialog">
+    <form id="moveForm" method="dialog">
+      <div class="dialog-head">
+        <div><h2>Flytta uppgift</h2><p id="moveTaskLabel">Flytta uppgift</p></div>
+        <button id="moveClose" class="icon-button" type="button" aria-label="Stäng">×</button>
+      </div>
+      <div class="edit-grid">
+        <label class="field field-wide"><span>Ny förälder</span><select id="moveParent"></select><small>Den valda uppgiften och hela dess underträd flyttas tillsammans.</small></label>
+        <label class="field field-wide"><span>Placering</span><select id="movePosition"><option value="first">Först under vald förälder</option><option value="last" selected>Sist under vald förälder</option></select></label>
+      </div>
+      <div class="dialog-actions"><button id="moveCancel" type="button">Avbryt</button><button id="moveSave" class="primary" type="submit">Flytta uppgift</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="sourceDialog" class="source-dialog">
+    <div class="dialog-head">
+      <div><h2>Aktuell Org-text</h2><p>Detta är texten som kommer att skrivas till den lokala filen när du väljer Spara.</p></div>
+      <button id="sourceClose" class="icon-button" type="button" aria-label="Stäng">×</button>
+    </div>
+    <textarea id="sourceText" readonly spellcheck="false"></textarea>
+    <div class="dialog-actions"><button id="sourceCloseBottom" type="button">Stäng</button></div>
+  </dialog>
+
+  <script src="app.js"></script>
 </body>
 </html>
